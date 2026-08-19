@@ -2,6 +2,7 @@ package com.bandrehearsal.bandrehearsalmanager.models;
 
 import jakarta.persistence.*;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "bands")
@@ -15,9 +16,11 @@ public class Band {
     private String genre;
     private Integer foundedYear;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "band")
     private List<Rehearsal> rehearsals;
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "bands")
     private List<Musician> musicians;
 
