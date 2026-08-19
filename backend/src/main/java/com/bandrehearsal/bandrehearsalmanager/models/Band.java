@@ -20,6 +20,7 @@ public class Band {
     @OneToMany(mappedBy = "band")
     private List<Rehearsal> rehearsals;
 
+    // Sprečava beskonačnu petlju pri pretvaranju u JSON (dvosmerna veza)
     @JsonIgnore
     @ManyToMany(mappedBy = "bands")
     private List<Musician> musicians;
