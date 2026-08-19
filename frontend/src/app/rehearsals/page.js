@@ -43,6 +43,7 @@ export default function Rehearsals() {
             id: editingId,
             date: date,
             durationMinutes: durationMinutes,
+            // Backendu šaljemo samo id benda; Hibernate poveže ostalo
             band: bandId ? { id: bandId } : null,
             rehearsalRoom: roomId ? { id: roomId } : null
         };

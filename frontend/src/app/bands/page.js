@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-export default function Home() {
+export default function Bands() {
   const [bands, setBands] = useState([]);
   const [name, setName] = useState("");
   const[genre, setGenre] = useState("");
