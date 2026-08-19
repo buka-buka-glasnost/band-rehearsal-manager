@@ -15,7 +15,7 @@ Završni projekat iz predmeta Internet softverske arhitekture.
 1. Instalirati zavisnosti:
    npm install
 2. Pokrenuti razvojni server:
-   npr run dev
+   npm run dev
 3. Aplikacija je dostupna na http://localhost:3000
 
 ## Backend
