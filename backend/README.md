@@ -22,7 +22,7 @@ ManyToMany (Musician <-> Band).
 2. Uvesti bazu iz priložene skripte 'band_manager.sql' (kreira bazu 'band_manager', tabele i test podatke).
 3. Po potrebi izmeniti pristupne podatke u 'src/main/resources/application.properties.
 4. Pokrenuti aplikaciju:
-   ./gradlew bootRun
+   .\gradlew bootRun
 5. API je dostupan na http://localhost:8080
 
 ## Dokumentacija
