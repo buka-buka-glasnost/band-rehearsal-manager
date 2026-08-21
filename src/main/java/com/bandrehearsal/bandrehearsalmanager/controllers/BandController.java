@@ -35,7 +35,7 @@ public class BandController {
     }
 
     @DeleteMapping("delete/{id}")
-    public void delete(@PathVariable Long id) {
+    public void delete (@PathVariable Long id) {
         bandService.deleteById(id);
     }
 }
