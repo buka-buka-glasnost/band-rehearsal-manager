@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "Band Rehearsal Manager",
-  description: "Manage your label's bands musicians and rehearsals.",
+  description: "Manage your label's bands musicians, and rehearsals.",
 };
 
 export default function RootLayout({ children }) {
