@@ -10,7 +10,7 @@ import com.bandrehearsal.bandrehearsalmanager.repositories.IMusicianRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -44,7 +44,7 @@ public class MusicianService implements IMusicianService {
     @Override
     @Transactional
     public Musician create(Musician musician) {
-        List<Band> bands = resolveBands(musician.getBands());
+        Set<Band> bands = resolveBands(musician.getBands());
         musician.setId(null);
         musician.setBands(bands);
         return musicianRepository.save(musician);
@@ -54,7 +54,7 @@ public class MusicianService implements IMusicianService {
     @Transactional
     public Musician update(Musician musician) {
         Musician existing = findById(requireId(musician.getId()));
-        List<Band> bands = resolveBands(musician.getBands());
+        Set<Band> bands = resolveBands(musician.getBands());
         existing.setName(musician.getName());
         existing.setInstrument(musician.getInstrument());
         existing.getBands().clear();
@@ -73,9 +73,9 @@ public class MusicianService implements IMusicianService {
     }
 
     /** The client sends bands as [{ "id": 1 }, ...]; load the real entities and reject unknown ids. */
-    private List<Band> resolveBands(List<Band> references) {
+    private Set<Band> resolveBands(Set<Band> references) {
         if (references == null || references.isEmpty()) {
-            return new ArrayList<>();
+            return new LinkedHashSet<>();
         }
         Set<Long> ids = references.stream()
                 .map(band -> referenceId(band.getId(), "bands"))
@@ -87,6 +87,8 @@ public class MusicianService implements IMusicianService {
             ids.removeAll(found);
             throw new BadRequestException("Unknown band id(s): " + ids);
         }
-        return new ArrayList<>(bands);
+        // Same order as when the musician is loaded later (@OrderBy("name ASC"))
+        bands.sort(Comparator.comparing(Band::getName, String.CASE_INSENSITIVE_ORDER));
+        return new LinkedHashSet<>(bands);
     }
 }

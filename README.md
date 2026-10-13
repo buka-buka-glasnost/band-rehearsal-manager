@@ -189,9 +189,22 @@ The tests use an in-memory H2 database, so MySQL does not need to be running.
 | Refresh token lifetime | `APP_JWT_REFRESHTOKENTTL` | `7d` |
 | Allowed front-end origins | `APP_CORS_ALLOWEDORIGINS` | `http://localhost:3000` |
 | Create demo accounts | `APP_SEED_ENABLED` | `true` |
+| API port | `PORT` | `8080` |
 | API address used by the client | `NEXT_PUBLIC_API_URL` | `http://localhost:8080` |
 
 To watch the automatic refresh happen, start the API with a short access token lifetime, for example `APP_JWT_ACCESSTOKENTTL=30s` (PowerShell: `$env:APP_JWT_ACCESSTOKENTTL="30s"`). Then open the browser's Network tab and wait 30 seconds between clicks.
+
+## Deployment
+
+The live demo runs on three free tiers:
+
+| Part | Host | Notes |
+|---|---|---|
+| Database | [Aiven for MySQL](https://aiven.io/free-tier) | Import `backend/band_manager.sql` once. Connect with `?sslMode=REQUIRED`. |
+| API | [Render](https://render.com) | Built from `backend/Dockerfile`. [`render.yaml`](render.yaml) describes the service and generates the JWT key. |
+| Client | [Vercel](https://vercel.com) | Root directory `frontend`, with `NEXT_PUBLIC_API_URL` set to the Render address. |
+
+Free Render services sleep after 15 minutes without traffic, so the first request after a break takes about a minute.
 
 ## Security notes
 

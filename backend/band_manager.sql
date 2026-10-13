@@ -42,6 +42,7 @@ INSERT INTO `attendances` (`id`, `present`, `musician_id`, `rehearsal_id`) VALUE
 CREATE TABLE IF NOT EXISTS `band_musicians` (
   `musician_id` bigint(20) NOT NULL,
   `band_id` bigint(20) NOT NULL,
+  PRIMARY KEY (`musician_id`,`band_id`),
   KEY `FKmpg5i85yhgl1k6diid99u99kv` (`band_id`),
   KEY `FKpx2u401m9mlv5079bsb25ymld` (`musician_id`),
   CONSTRAINT `FKmpg5i85yhgl1k6diid99u99kv` FOREIGN KEY (`band_id`) REFERENCES `bands` (`id`),
