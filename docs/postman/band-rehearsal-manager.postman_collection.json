@@ -1,0 +1,3351 @@
+{
+  "info": {
+    "_postman_id": "1425e7d6-2e31-55c4-beea-8ed5247fc7dc",
+    "name": "Band Rehearsal Manager API",
+    "description": "REST API for scheduling band rehearsals, secured with JWT.\n\n**Start here:** run *Auth / Log in (admin)*. It stores the access and refresh tokens in collection variables, and every other request sends `Authorization: Bearer {{accessToken}}` automatically. A collection script refreshes the access token before it expires.\n\n**Roles:** `USER` can call every GET endpoint. `ADMIN` can also create, update and delete. Demo accounts: admin / admin123 and user / user123.\n\n**Errors** are RFC 9457 problem details: `{ type, title, status, detail, instance }`, plus `errors` with one message per field for validation failures.\n\nEvery request has saved example responses, including the error cases.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Refreshes the access token shortly before it expires, the same way the web client",
+          "// does after a 401. Runs before every request except the /auth/* ones.",
+          "const accessToken = pm.collectionVariables.get(\"accessToken\");",
+          "const refreshToken = pm.collectionVariables.get(\"refreshToken\");",
+          "const isAuthCall = pm.request.url.getPath().startsWith(\"/auth/\");",
+          "",
+          "function expiresAt(jwt) {",
+          "    try {",
+          "        let payload = jwt.split(\".\")[1].replace(/-/g, \"+\").replace(/_/g, \"/\");",
+          "        while (payload.length % 4) payload += \"=\";",
+          "        return JSON.parse(atob(payload)).exp * 1000;",
+          "    } catch (e) {",
+          "        return 0;",
+          "    }",
+          "}",
+          "",
+          "if (accessToken && refreshToken && !isAuthCall && expiresAt(accessToken) - Date.now() < 30000) {",
+          "    pm.sendRequest({",
+          "        url: pm.collectionVariables.get(\"baseUrl\") + \"/auth/refresh\",",
+          "        method: \"POST\",",
+          "        header: { \"Content-Type\": \"application/json\" },",
+          "        body: { mode: \"raw\", raw: JSON.stringify({ refreshToken }) }",
+          "    }, (error, response) => {",
+          "        if (!error && response.code === 200) {",
+          "            const body = response.json();",
+          "            pm.collectionVariables.set(\"accessToken\", body.accessToken);",
+          "            pm.collectionVariables.set(\"refreshToken\", body.refreshToken);",
+          "        }",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Register, log in, refresh and log out. These requests need no access token.",
+      "item": [
+        {
+          "name": "Log in (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Logs in as the demo ADMIN account and stores both tokens in collection variables."
+          },
+          "response": [
+            {
+              "name": "200 Logged in",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "Logs in as the demo ADMIN account and stores both tokens in collection variables."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc5MjQ4ODAwMCwiZXhwIjoxNzkyNDg4OTAwfQ.sQOv0BGbz7lvZgXCDPcQ2FdZZjqo7ucryBxpRdsgj7lduCxcFWCFrNXBpwLtpX17a62I8KGg-P6hNJUXIwGDwA\",\n  \"refreshToken\": \"kLGyhgQ_G3YS5CPHRgj16i9nY0BQfwtnIZsg0J_Ed3s\",\n  \"tokenType\": \"Bearer\",\n  \"expiresIn\": 900,\n  \"username\": \"admin\",\n  \"role\": \"ADMIN\"\n}"
+            },
+            {
+              "name": "401 Wrong password",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"wrong\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Unauthorized\",\n  \"status\": 401,\n  \"detail\": \"Invalid username or password\",\n  \"instance\": \"/auth/login\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test(\"Returns a token pair\", () => {",
+                  "    pm.expect(body.accessToken).to.be.a(\"string\");",
+                  "    pm.expect(body.refreshToken).to.be.a(\"string\");",
+                  "});",
+                  "// Every other request uses these through the collection's Bearer auth",
+                  "pm.collectionVariables.set(\"accessToken\", body.accessToken);",
+                  "pm.collectionVariables.set(\"refreshToken\", body.refreshToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Log in (user, read-only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"user\",\n  \"password\": \"user123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Logs in as the demo USER account. Its token can read everything; POST, PUT and DELETE return 403."
+          },
+          "response": [
+            {
+              "name": "200 Logged in",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"user\",\n  \"password\": \"user123\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "Logs in as the demo USER account. Its token can read everything; POST, PUT and DELETE return 403."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ1c2VyIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3OTI0ODgwMDAsImV4cCI6MTc5MjQ4ODkwMH0.E5AjqZal7zJd5DmozUIaBWH77wxJvbs6IU2mhu4e2PJ2dcHp82g5Om6Vel5w04sEVIUtDXuKf9PEpX_OQwtahQ\",\n  \"refreshToken\": \"xsKJ5J6cBbIUWGA4e3O8sY30P7CaHkpKlxPHbIi7VBs\",\n  \"tokenType\": \"Bearer\",\n  \"expiresIn\": 900,\n  \"username\": \"user\",\n  \"role\": \"USER\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test(\"Returns a token pair\", () => {",
+                  "    pm.expect(body.accessToken).to.be.a(\"string\");",
+                  "    pm.expect(body.refreshToken).to.be.a(\"string\");",
+                  "});",
+                  "// Every other request uses these through the collection's Bearer auth",
+                  "pm.collectionVariables.set(\"accessToken\", body.accessToken);",
+                  "pm.collectionVariables.set(\"refreshToken\", body.refreshToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"drummer.ana\",\n  \"password\": \"secret12\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Creates an account with the USER role and logs it in."
+          },
+          "response": [
+            {
+              "name": "201 Account created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"drummer.ana\",\n  \"password\": \"secret12\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "Creates an account with the USER role and logs it in."
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJkcnVtbWVyLmFuYSIsInJvbGUiOiJVU0VSIiwiaWF0IjoxNzkyNDg4MDAwLCJleHAiOjE3OTI0ODg5MDB9.iQU9pcNkQGr14uifE8AUERFUTqccUNAtbXked-mmaRbweRq5hWPmWu8n8oF3eT2-w3plvTaWWQj8pneiSUAasA\",\n  \"refreshToken\": \"poDRyZi1k_Q97oTX9tc_GcXEmH7KYc3incxDV3qiVE0\",\n  \"tokenType\": \"Bearer\",\n  \"expiresIn\": 900,\n  \"username\": \"drummer.ana\",\n  \"role\": \"USER\"\n}"
+            },
+            {
+              "name": "409 Username taken",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"drummer.ana\",\n  \"password\": \"secret12\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "Creates an account with the USER role and logs it in."
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Conflict\",\n  \"status\": 409,\n  \"detail\": \"Username 'drummer.ana' is already taken\",\n  \"instance\": \"/auth/register\"\n}"
+            },
+            {
+              "name": "400 Invalid input",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"x\",\n  \"password\": \"123\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Bad Request\",\n  \"status\": 400,\n  \"detail\": \"Validation failed\",\n  \"instance\": \"/auth/register\",\n  \"errors\": {\n    \"username\": \"Username must be 3-50 characters long\",\n    \"password\": \"Password must be 6-100 characters long\"\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test(\"Returns a token pair\", () => {",
+                  "    pm.expect(body.accessToken).to.be.a(\"string\");",
+                  "    pm.expect(body.refreshToken).to.be.a(\"string\");",
+                  "});",
+                  "// Every other request uses these through the collection's Bearer auth",
+                  "pm.collectionVariables.set(\"accessToken\", body.accessToken);",
+                  "pm.collectionVariables.set(\"refreshToken\", body.refreshToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh tokens",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Exchanges the refresh token for a new access token and a new refresh token. The old refresh token is revoked (rotation). Sending an already used token again revokes every session of that user (reuse detection)."
+          },
+          "response": [
+            {
+              "name": "200 New token pair",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/refresh",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "refresh"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "Exchanges the refresh token for a new access token and a new refresh token. The old refresh token is revoked (rotation). Sending an already used token again revokes every session of that user (reuse detection)."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc5MjQ4ODkwMCwiZXhwIjoxNzkyNDg5ODAwfQ.XLDf8xbsNLrE8gswjGlhCLprwxTtVeXTp-CaVWkAY78pNHPAa6PZH2qctnnmBCUN9TO43qM0zenF_ziFdZy-rQ\",\n  \"refreshToken\": \"u6hqHhedxpsv9LkTBqEASjjI64ooCUethYz70a9wu_Q\",\n  \"tokenType\": \"Bearer\",\n  \"expiresIn\": 900,\n  \"username\": \"admin\",\n  \"role\": \"ADMIN\"\n}"
+            },
+            {
+              "name": "401 Token already used",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/refresh",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "refresh"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "Exchanges the refresh token for a new access token and a new refresh token. The old refresh token is revoked (rotation). Sending an already used token again revokes every session of that user (reuse detection)."
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Unauthorized\",\n  \"status\": 401,\n  \"detail\": \"Refresh token has already been used or revoked\",\n  \"instance\": \"/auth/refresh\"\n}"
+            },
+            {
+              "name": "401 Unknown token",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/refresh",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "refresh"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "Exchanges the refresh token for a new access token and a new refresh token. The old refresh token is revoked (rotation). Sending an already used token again revokes every session of that user (reuse detection)."
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Unauthorized\",\n  \"status\": 401,\n  \"detail\": \"Refresh token is invalid\",\n  \"instance\": \"/auth/refresh\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test(\"Returns a token pair\", () => {",
+                  "    pm.expect(body.accessToken).to.be.a(\"string\");",
+                  "    pm.expect(body.refreshToken).to.be.a(\"string\");",
+                  "});",
+                  "// Every other request uses these through the collection's Bearer auth",
+                  "pm.collectionVariables.set(\"accessToken\", body.accessToken);",
+                  "pm.collectionVariables.set(\"refreshToken\", body.refreshToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Who am I",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Returns the user and role from the access token."
+          },
+          "response": [
+            {
+              "name": "200 Current user",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/me",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "me"
+                  ]
+                },
+                "description": "Returns the user and role from the access token."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"username\": \"admin\",\n  \"role\": \"ADMIN\"\n}"
+            },
+            {
+              "name": "401 Expired access token",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/me",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "me"
+                  ]
+                },
+                "description": "Returns the user and role from the access token."
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                },
+                {
+                  "key": "WWW-Authenticate",
+                  "value": "Bearer error=\"invalid_token\", error_description=\"Access token has expired\""
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Unauthorized\",\n  \"status\": 401,\n  \"detail\": \"Access token has expired\",\n  \"instance\": \"/auth/me\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Log out",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Revokes the refresh token. The access token stays valid until it expires (at most 15 minutes)."
+          },
+          "response": [
+            {
+              "name": "204 Logged out",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/logout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "logout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "Revokes the refresh token. The access token stays valid until it expires (at most 15 minutes)."
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "text",
+              "header": [],
+              "body": ""
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"accessToken\", \"\");",
+                  "pm.collectionVariables.set(\"refreshToken\", \"\");"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Bands",
+      "description": "Bands. A band has many rehearsals (OneToMany) and many musicians (ManyToMany).",
+      "item": [
+        {
+          "name": "Get all bands",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/band/get-list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "band",
+                "get-list"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 List",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/band/get-list",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "band",
+                    "get-list"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": 1,\n    \"name\": \"Nocturnal Paroxysms\",\n    \"genre\": \"Ambient\",\n    \"foundedYear\": 2020\n  },\n  {\n    \"id\": 4,\n    \"name\": \"Plastic Elastic Fantastic\",\n    \"genre\": \"Gothic Turbo Folk\",\n    \"foundedYear\": 2012\n  },\n  {\n    \"id\": 8,\n    \"name\": \"Bebop Bureaucracy\",\n    \"genre\": \"Free Jazz\",\n    \"foundedYear\": 2023\n  }\n]"
+            },
+            {
+              "name": "401 No token",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/band/get-list",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "band",
+                    "get-list"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                },
+                {
+                  "key": "WWW-Authenticate",
+                  "value": "Bearer"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Unauthorized\",\n  \"status\": 401,\n  \"detail\": \"Authentication is required to access this resource\",\n  \"instance\": \"/band/get-list\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get band by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/band/get/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "band",
+                "get",
+                "1"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 Band",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/band/get/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "band",
+                    "get",
+                    "1"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 1,\n  \"name\": \"Nocturnal Paroxysms\",\n  \"genre\": \"Ambient\",\n  \"foundedYear\": 2020\n}"
+            },
+            {
+              "name": "404 Not found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/band/get/999",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "band",
+                    "get",
+                    "999"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Band with id 999 not found\",\n  \"instance\": \"/band/get/999\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create band",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/band/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "band",
+                "create"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Fuzz Committee\",\n  \"genre\": \"Stoner Rock\",\n  \"foundedYear\": 2019\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "ADMIN only."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/band/create",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "band",
+                    "create"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Fuzz Committee\",\n  \"genre\": \"Stoner Rock\",\n  \"foundedYear\": 2019\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "ADMIN only."
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 9,\n  \"name\": \"Fuzz Committee\",\n  \"genre\": \"Stoner Rock\",\n  \"foundedYear\": 2019\n}"
+            },
+            {
+              "name": "400 Validation failed",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/band/create",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "band",
+                    "create"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"\",\n  \"genre\": \"Rock\",\n  \"foundedYear\": 1800\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Bad Request\",\n  \"status\": 400,\n  \"detail\": \"Validation failed\",\n  \"instance\": \"/band/create\",\n  \"errors\": {\n    \"name\": \"Name is required\",\n    \"foundedYear\": \"Founded year must be 1900 or later\"\n  }\n}"
+            },
+            {
+              "name": "403 Read-only user",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/band/create",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "band",
+                    "create"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Fuzz Committee\",\n  \"genre\": \"Stoner Rock\",\n  \"foundedYear\": 2019\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "ADMIN only."
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Forbidden\",\n  \"status\": 403,\n  \"detail\": \"Your role does not allow this operation\",\n  \"instance\": \"/band/create\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update band",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/band/update",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "band",
+                "update"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 9,\n  \"name\": \"Fuzz Committee\",\n  \"genre\": \"Desert Rock\",\n  \"foundedYear\": 2019\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "ADMIN only. The id goes in the body."
+          },
+          "response": [
+            {
+              "name": "200 Updated",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/band/update",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "band",
+                    "update"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": 9,\n  \"name\": \"Fuzz Committee\",\n  \"genre\": \"Desert Rock\",\n  \"foundedYear\": 2019\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "ADMIN only. The id goes in the body."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 9,\n  \"name\": \"Fuzz Committee\",\n  \"genre\": \"Desert Rock\",\n  \"foundedYear\": 2019\n}"
+            },
+            {
+              "name": "404 Not found",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/band/update",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "band",
+                    "update"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": 9,\n  \"name\": \"Fuzz Committee\",\n  \"genre\": \"Desert Rock\",\n  \"foundedYear\": 2019\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "ADMIN only. The id goes in the body."
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Band with id 9 not found\",\n  \"instance\": \"/band/update\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete band",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/band/delete/9",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "band",
+                "delete",
+                "9"
+              ]
+            },
+            "description": "ADMIN only."
+          },
+          "response": [
+            {
+              "name": "204 Deleted",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/band/delete/9",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "band",
+                    "delete",
+                    "9"
+                  ]
+                },
+                "description": "ADMIN only."
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "text",
+              "header": [],
+              "body": ""
+            },
+            {
+              "name": "409 Still referenced",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/band/delete/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "band",
+                    "delete",
+                    "1"
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Conflict\",\n  \"status\": 409,\n  \"detail\": \"Band 'Nocturnal Paroxysms' has rehearsals; delete them first\",\n  \"instance\": \"/band/delete/1\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Musicians",
+      "description": "Musicians. The bands list is the ManyToMany relation: send band ids, get full bands back.",
+      "item": [
+        {
+          "name": "Get all musicians",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/musician/get-list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "musician",
+                "get-list"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 List",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/musician/get-list",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "musician",
+                    "get-list"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": 1,\n    \"name\": \"Mike Muscala\",\n    \"instrument\": \"Bassoon\",\n    \"bands\": [\n      {\n        \"id\": 8,\n        \"name\": \"Bebop Bureaucracy\",\n        \"genre\": \"Free Jazz\",\n        \"foundedYear\": 2023\n      },\n      {\n        \"id\": 1,\n        \"name\": \"Nocturnal Paroxysms\",\n        \"genre\": \"Ambient\",\n        \"foundedYear\": 2020\n      }\n    ]\n  },\n  {\n    \"id\": 2,\n    \"name\": \"Johnny Jackal\",\n    \"instrument\": \"Harp\",\n    \"bands\": [\n      {\n        \"id\": 4,\n        \"name\": \"Plastic Elastic Fantastic\",\n        \"genre\": \"Gothic Turbo Folk\",\n        \"foundedYear\": 2012\n      }\n    ]\n  }\n]"
+            },
+            {
+              "name": "401 No token",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/musician/get-list",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "musician",
+                    "get-list"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                },
+                {
+                  "key": "WWW-Authenticate",
+                  "value": "Bearer"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Unauthorized\",\n  \"status\": 401,\n  \"detail\": \"Authentication is required to access this resource\",\n  \"instance\": \"/musician/get-list\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get musician by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/musician/get/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "musician",
+                "get",
+                "1"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 Musician",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/musician/get/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "musician",
+                    "get",
+                    "1"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 1,\n  \"name\": \"Mike Muscala\",\n  \"instrument\": \"Bassoon\",\n  \"bands\": [\n    {\n      \"id\": 8,\n      \"name\": \"Bebop Bureaucracy\",\n      \"genre\": \"Free Jazz\",\n      \"foundedYear\": 2023\n    },\n    {\n      \"id\": 1,\n      \"name\": \"Nocturnal Paroxysms\",\n      \"genre\": \"Ambient\",\n      \"foundedYear\": 2020\n    }\n  ]\n}"
+            },
+            {
+              "name": "404 Not found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/musician/get/999",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "musician",
+                    "get",
+                    "999"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Musician with id 999 not found\",\n  \"instance\": \"/musician/get/999\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create musician",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/musician/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "musician",
+                "create"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ana Drummer\",\n  \"instrument\": \"Drums\",\n  \"bands\": [\n    {\n      \"id\": 1\n    },\n    {\n      \"id\": 4\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "ADMIN only."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/musician/create",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "musician",
+                    "create"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Ana Drummer\",\n  \"instrument\": \"Drums\",\n  \"bands\": [\n    {\n      \"id\": 1\n    },\n    {\n      \"id\": 4\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "ADMIN only."
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 5,\n  \"name\": \"Ana Drummer\",\n  \"instrument\": \"Drums\",\n  \"bands\": [\n    {\n      \"id\": 1,\n      \"name\": \"Nocturnal Paroxysms\",\n      \"genre\": \"Ambient\",\n      \"foundedYear\": 2020\n    },\n    {\n      \"id\": 4,\n      \"name\": \"Plastic Elastic Fantastic\",\n      \"genre\": \"Gothic Turbo Folk\",\n      \"foundedYear\": 2012\n    }\n  ]\n}"
+            },
+            {
+              "name": "400 Unknown band",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/musician/create",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "musician",
+                    "create"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Ana Drummer\",\n  \"instrument\": \"Drums\",\n  \"bands\": [\n    {\n      \"id\": 999\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Bad Request\",\n  \"status\": 400,\n  \"detail\": \"Unknown band id(s): [999]\",\n  \"instance\": \"/musician/create\"\n}"
+            },
+            {
+              "name": "403 Read-only user",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/musician/create",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "musician",
+                    "create"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Ana Drummer\",\n  \"instrument\": \"Drums\",\n  \"bands\": [\n    {\n      \"id\": 1\n    },\n    {\n      \"id\": 4\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "ADMIN only."
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Forbidden\",\n  \"status\": 403,\n  \"detail\": \"Your role does not allow this operation\",\n  \"instance\": \"/musician/create\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update musician",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/musician/update",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "musician",
+                "update"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 5,\n  \"name\": \"Ana Drummer\",\n  \"instrument\": \"Drums\",\n  \"bands\": [\n    {\n      \"id\": 8\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "ADMIN only. The id goes in the body."
+          },
+          "response": [
+            {
+              "name": "200 Updated",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/musician/update",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "musician",
+                    "update"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": 5,\n  \"name\": \"Ana Drummer\",\n  \"instrument\": \"Drums\",\n  \"bands\": [\n    {\n      \"id\": 8\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "ADMIN only. The id goes in the body."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 5,\n  \"name\": \"Ana Drummer\",\n  \"instrument\": \"Drums\",\n  \"bands\": [\n    {\n      \"id\": 8,\n      \"name\": \"Bebop Bureaucracy\",\n      \"genre\": \"Free Jazz\",\n      \"foundedYear\": 2023\n    }\n  ]\n}"
+            },
+            {
+              "name": "404 Not found",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/musician/update",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "musician",
+                    "update"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": 5,\n  \"name\": \"Ana Drummer\",\n  \"instrument\": \"Drums\",\n  \"bands\": [\n    {\n      \"id\": 8\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "ADMIN only. The id goes in the body."
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Musician with id 5 not found\",\n  \"instance\": \"/musician/update\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete musician",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/musician/delete/5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "musician",
+                "delete",
+                "5"
+              ]
+            },
+            "description": "ADMIN only."
+          },
+          "response": [
+            {
+              "name": "204 Deleted",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/musician/delete/5",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "musician",
+                    "delete",
+                    "5"
+                  ]
+                },
+                "description": "ADMIN only."
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "text",
+              "header": [],
+              "body": ""
+            },
+            {
+              "name": "409 Still referenced",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/musician/delete/2",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "musician",
+                    "delete",
+                    "2"
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Conflict\",\n  \"status\": 409,\n  \"detail\": \"Musician 'Johnny Jackal' has attendance records; delete them first\",\n  \"instance\": \"/musician/delete/2\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Rehearsals",
+      "description": "Rehearsals. Each belongs to one band and one room (ManyToOne), send them as { \"id\": ... }.",
+      "item": [
+        {
+          "name": "Get all rehearsals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rehearsal/get-list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rehearsal",
+                "get-list"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 List",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal/get-list",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal",
+                    "get-list"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": 1,\n    \"date\": \"2025-10-12\",\n    \"durationMinutes\": 90,\n    \"band\": {\n      \"id\": 1,\n      \"name\": \"Nocturnal Paroxysms\",\n      \"genre\": \"Ambient\",\n      \"foundedYear\": 2020\n    },\n    \"rehearsalRoom\": {\n      \"id\": 3,\n      \"name\": \"Tom's Garage\",\n      \"address\": \"Mechanic Street 11\",\n      \"capacity\": 6\n    }\n  },\n  {\n    \"id\": 3,\n    \"date\": \"2023-11-30\",\n    \"durationMinutes\": 120,\n    \"band\": {\n      \"id\": 4,\n      \"name\": \"Plastic Elastic Fantastic\",\n      \"genre\": \"Gothic Turbo Folk\",\n      \"foundedYear\": 2012\n    },\n    \"rehearsalRoom\": {\n      \"id\": 1,\n      \"name\": \"Garfield the Pirate\",\n      \"address\": \"Lasagna Street 10\",\n      \"capacity\": 8\n    }\n  },\n  {\n    \"id\": 4,\n    \"date\": \"2026-05-15\",\n    \"durationMinutes\": 150,\n    \"band\": {\n      \"id\": 8,\n      \"name\": \"Bebop Bureaucracy\",\n      \"genre\": \"Free Jazz\",\n      \"foundedYear\": 2023\n    },\n    \"rehearsalRoom\": {\n      \"id\": 2,\n      \"name\": \"Spiderweb Studio\",\n      \"address\": \"Spider Street 8\",\n      \"capacity\": 8\n    }\n  }\n]"
+            },
+            {
+              "name": "401 No token",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal/get-list",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal",
+                    "get-list"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                },
+                {
+                  "key": "WWW-Authenticate",
+                  "value": "Bearer"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Unauthorized\",\n  \"status\": 401,\n  \"detail\": \"Authentication is required to access this resource\",\n  \"instance\": \"/rehearsal/get-list\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get rehearsal by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rehearsal/get/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rehearsal",
+                "get",
+                "1"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 Rehearsal",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal/get/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal",
+                    "get",
+                    "1"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 1,\n  \"date\": \"2025-10-12\",\n  \"durationMinutes\": 90,\n  \"band\": {\n    \"id\": 1,\n    \"name\": \"Nocturnal Paroxysms\",\n    \"genre\": \"Ambient\",\n    \"foundedYear\": 2020\n  },\n  \"rehearsalRoom\": {\n    \"id\": 3,\n    \"name\": \"Tom's Garage\",\n    \"address\": \"Mechanic Street 11\",\n    \"capacity\": 6\n  }\n}"
+            },
+            {
+              "name": "404 Not found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal/get/999",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal",
+                    "get",
+                    "999"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Rehearsal with id 999 not found\",\n  \"instance\": \"/rehearsal/get/999\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create rehearsal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rehearsal/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rehearsal",
+                "create"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2026-11-20\",\n  \"durationMinutes\": 120,\n  \"band\": {\n    \"id\": 1\n  },\n  \"rehearsalRoom\": {\n    \"id\": 5\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "ADMIN only."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal/create",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal",
+                    "create"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"date\": \"2026-11-20\",\n  \"durationMinutes\": 120,\n  \"band\": {\n    \"id\": 1\n  },\n  \"rehearsalRoom\": {\n    \"id\": 5\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "ADMIN only."
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 8,\n  \"date\": \"2026-11-20\",\n  \"durationMinutes\": 120,\n  \"band\": {\n    \"id\": 1,\n    \"name\": \"Nocturnal Paroxysms\",\n    \"genre\": \"Ambient\",\n    \"foundedYear\": 2020\n  },\n  \"rehearsalRoom\": {\n    \"id\": 5,\n    \"name\": \"Jimmy Jazz Studio\",\n    \"address\": \"Dizzy Street 23\",\n    \"capacity\": 10\n  }\n}"
+            },
+            {
+              "name": "400 Unknown band",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal/create",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal",
+                    "create"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"date\": \"2026-11-20\",\n  \"durationMinutes\": 120,\n  \"band\": {\n    \"id\": 999\n  },\n  \"rehearsalRoom\": {\n    \"id\": 5\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Bad Request\",\n  \"status\": 400,\n  \"detail\": \"Band with id 999 does not exist\",\n  \"instance\": \"/rehearsal/create\"\n}"
+            },
+            {
+              "name": "403 Read-only user",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal/create",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal",
+                    "create"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"date\": \"2026-11-20\",\n  \"durationMinutes\": 120,\n  \"band\": {\n    \"id\": 1\n  },\n  \"rehearsalRoom\": {\n    \"id\": 5\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "ADMIN only."
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Forbidden\",\n  \"status\": 403,\n  \"detail\": \"Your role does not allow this operation\",\n  \"instance\": \"/rehearsal/create\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update rehearsal",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rehearsal/update",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rehearsal",
+                "update"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 8,\n  \"date\": \"2026-11-21\",\n  \"durationMinutes\": 90,\n  \"band\": {\n    \"id\": 1\n  },\n  \"rehearsalRoom\": {\n    \"id\": 3\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "ADMIN only. The id goes in the body."
+          },
+          "response": [
+            {
+              "name": "200 Updated",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal/update",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal",
+                    "update"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": 8,\n  \"date\": \"2026-11-21\",\n  \"durationMinutes\": 90,\n  \"band\": {\n    \"id\": 1\n  },\n  \"rehearsalRoom\": {\n    \"id\": 3\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "ADMIN only. The id goes in the body."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 8,\n  \"date\": \"2026-11-21\",\n  \"durationMinutes\": 90,\n  \"band\": {\n    \"id\": 1,\n    \"name\": \"Nocturnal Paroxysms\",\n    \"genre\": \"Ambient\",\n    \"foundedYear\": 2020\n  },\n  \"rehearsalRoom\": {\n    \"id\": 3,\n    \"name\": \"Tom's Garage\",\n    \"address\": \"Mechanic Street 11\",\n    \"capacity\": 6\n  }\n}"
+            },
+            {
+              "name": "404 Not found",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal/update",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal",
+                    "update"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": 8,\n  \"date\": \"2026-11-21\",\n  \"durationMinutes\": 90,\n  \"band\": {\n    \"id\": 1\n  },\n  \"rehearsalRoom\": {\n    \"id\": 3\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "ADMIN only. The id goes in the body."
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Rehearsal with id 8 not found\",\n  \"instance\": \"/rehearsal/update\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete rehearsal",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rehearsal/delete/8",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rehearsal",
+                "delete",
+                "8"
+              ]
+            },
+            "description": "ADMIN only."
+          },
+          "response": [
+            {
+              "name": "204 Deleted",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal/delete/8",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal",
+                    "delete",
+                    "8"
+                  ]
+                },
+                "description": "ADMIN only."
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "text",
+              "header": [],
+              "body": ""
+            },
+            {
+              "name": "409 Still referenced",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal/delete/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal",
+                    "delete",
+                    "1"
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Conflict\",\n  \"status\": 409,\n  \"detail\": \"Rehearsal on 2025-10-12 has attendance records; delete them first\",\n  \"instance\": \"/rehearsal/delete/1\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Rehearsal Rooms",
+      "description": "Rehearsal rooms. A room hosts many rehearsals (OneToMany).",
+      "item": [
+        {
+          "name": "Get all rehearsal rooms",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rehearsal-room/get-list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rehearsal-room",
+                "get-list"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 List",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal-room/get-list",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal-room",
+                    "get-list"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": 1,\n    \"name\": \"Garfield the Pirate\",\n    \"address\": \"Lasagna Street 10\",\n    \"capacity\": 8\n  },\n  {\n    \"id\": 2,\n    \"name\": \"Spiderweb Studio\",\n    \"address\": \"Spider Street 8\",\n    \"capacity\": 8\n  },\n  {\n    \"id\": 3,\n    \"name\": \"Tom's Garage\",\n    \"address\": \"Mechanic Street 11\",\n    \"capacity\": 6\n  },\n  {\n    \"id\": 5,\n    \"name\": \"Jimmy Jazz Studio\",\n    \"address\": \"Dizzy Street 23\",\n    \"capacity\": 10\n  }\n]"
+            },
+            {
+              "name": "401 No token",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal-room/get-list",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal-room",
+                    "get-list"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                },
+                {
+                  "key": "WWW-Authenticate",
+                  "value": "Bearer"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Unauthorized\",\n  \"status\": 401,\n  \"detail\": \"Authentication is required to access this resource\",\n  \"instance\": \"/rehearsal-room/get-list\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get rehearsal room by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rehearsal-room/get/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rehearsal-room",
+                "get",
+                "1"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 Rehearsal room",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal-room/get/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal-room",
+                    "get",
+                    "1"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 1,\n  \"name\": \"Garfield the Pirate\",\n  \"address\": \"Lasagna Street 10\",\n  \"capacity\": 8\n}"
+            },
+            {
+              "name": "404 Not found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal-room/get/999",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal-room",
+                    "get",
+                    "999"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Rehearsal room with id 999 not found\",\n  \"instance\": \"/rehearsal-room/get/999\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create rehearsal room",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rehearsal-room/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rehearsal-room",
+                "create"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"The Echo Chamber\",\n  \"address\": \"Reverb Lane 4\",\n  \"capacity\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "ADMIN only."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal-room/create",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal-room",
+                    "create"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"The Echo Chamber\",\n  \"address\": \"Reverb Lane 4\",\n  \"capacity\": 5\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "ADMIN only."
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 6,\n  \"name\": \"The Echo Chamber\",\n  \"address\": \"Reverb Lane 4\",\n  \"capacity\": 5\n}"
+            },
+            {
+              "name": "403 Read-only user",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal-room/create",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal-room",
+                    "create"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"The Echo Chamber\",\n  \"address\": \"Reverb Lane 4\",\n  \"capacity\": 5\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "ADMIN only."
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Forbidden\",\n  \"status\": 403,\n  \"detail\": \"Your role does not allow this operation\",\n  \"instance\": \"/rehearsal-room/create\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update rehearsal room",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rehearsal-room/update",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rehearsal-room",
+                "update"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 6,\n  \"name\": \"The Echo Chamber\",\n  \"address\": \"Reverb Lane 4\",\n  \"capacity\": 7\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "ADMIN only. The id goes in the body."
+          },
+          "response": [
+            {
+              "name": "200 Updated",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal-room/update",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal-room",
+                    "update"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": 6,\n  \"name\": \"The Echo Chamber\",\n  \"address\": \"Reverb Lane 4\",\n  \"capacity\": 7\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "ADMIN only. The id goes in the body."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 6,\n  \"name\": \"The Echo Chamber\",\n  \"address\": \"Reverb Lane 4\",\n  \"capacity\": 7\n}"
+            },
+            {
+              "name": "404 Not found",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal-room/update",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal-room",
+                    "update"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": 6,\n  \"name\": \"The Echo Chamber\",\n  \"address\": \"Reverb Lane 4\",\n  \"capacity\": 7\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "ADMIN only. The id goes in the body."
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Rehearsal room with id 6 not found\",\n  \"instance\": \"/rehearsal-room/update\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete rehearsal room",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rehearsal-room/delete/6",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rehearsal-room",
+                "delete",
+                "6"
+              ]
+            },
+            "description": "ADMIN only."
+          },
+          "response": [
+            {
+              "name": "204 Deleted",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal-room/delete/6",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal-room",
+                    "delete",
+                    "6"
+                  ]
+                },
+                "description": "ADMIN only."
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "text",
+              "header": [],
+              "body": ""
+            },
+            {
+              "name": "409 Still referenced",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/rehearsal-room/delete/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "rehearsal-room",
+                    "delete",
+                    "1"
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Conflict\",\n  \"status\": 409,\n  \"detail\": \"Rehearsal room 'Garfield the Pirate' has rehearsals; delete them first\",\n  \"instance\": \"/rehearsal-room/delete/1\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Attendance",
+      "description": "Who attended which rehearsal. Each record links one musician and one rehearsal.",
+      "item": [
+        {
+          "name": "Get all attendance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/attendance/get-list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "attendance",
+                "get-list"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 List",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/attendance/get-list",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "attendance",
+                    "get-list"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": 1,\n    \"musician\": {\n      \"id\": 1,\n      \"name\": \"Mike Muscala\",\n      \"instrument\": \"Bassoon\",\n      \"bands\": [\n        {\n          \"id\": 8,\n          \"name\": \"Bebop Bureaucracy\",\n          \"genre\": \"Free Jazz\",\n          \"foundedYear\": 2023\n        },\n        {\n          \"id\": 1,\n          \"name\": \"Nocturnal Paroxysms\",\n          \"genre\": \"Ambient\",\n          \"foundedYear\": 2020\n        }\n      ]\n    },\n    \"rehearsal\": {\n      \"id\": 1,\n      \"date\": \"2025-10-12\",\n      \"durationMinutes\": 90,\n      \"band\": {\n        \"id\": 1,\n        \"name\": \"Nocturnal Paroxysms\",\n        \"genre\": \"Ambient\",\n        \"foundedYear\": 2020\n      },\n      \"rehearsalRoom\": {\n        \"id\": 3,\n        \"name\": \"Tom's Garage\",\n        \"address\": \"Mechanic Street 11\",\n        \"capacity\": 6\n      }\n    },\n    \"present\": true\n  },\n  {\n    \"id\": 3,\n    \"musician\": {\n      \"id\": 2,\n      \"name\": \"Johnny Jackal\",\n      \"instrument\": \"Harp\",\n      \"bands\": [\n        {\n          \"id\": 4,\n          \"name\": \"Plastic Elastic Fantastic\",\n          \"genre\": \"Gothic Turbo Folk\",\n          \"foundedYear\": 2012\n        }\n      ]\n    },\n    \"rehearsal\": {\n      \"id\": 3,\n      \"date\": \"2023-11-30\",\n      \"durationMinutes\": 120,\n      \"band\": {\n        \"id\": 4,\n        \"name\": \"Plastic Elastic Fantastic\",\n        \"genre\": \"Gothic Turbo Folk\",\n        \"foundedYear\": 2012\n      },\n      \"rehearsalRoom\": {\n        \"id\": 1,\n        \"name\": \"Garfield the Pirate\",\n        \"address\": \"Lasagna Street 10\",\n        \"capacity\": 8\n      }\n    },\n    \"present\": false\n  },\n  {\n    \"id\": 4,\n    \"musician\": {\n      \"id\": 2,\n      \"name\": \"Johnny Jackal\",\n      \"instrument\": \"Harp\",\n      \"bands\": [\n        {\n          \"id\": 4,\n          \"name\": \"Plastic Elastic Fantastic\",\n          \"genre\": \"Gothic Turbo Folk\",\n          \"foundedYear\": 2012\n        }\n      ]\n    },\n    \"rehearsal\": {\n      \"id\": 4,\n      \"date\": \"2026-05-15\",\n      \"durationMinutes\": 150,\n      \"band\": {\n        \"id\": 8,\n        \"name\": \"Bebop Bureaucracy\",\n        \"genre\": \"Free Jazz\",\n        \"foundedYear\": 2023\n      },\n      \"rehearsalRoom\": {\n        \"id\": 2,\n        \"name\": \"Spiderweb Studio\",\n        \"address\": \"Spider Street 8\",\n        \"capacity\": 8\n      }\n    },\n    \"present\": false\n  }\n]"
+            },
+            {
+              "name": "401 No token",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/attendance/get-list",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "attendance",
+                    "get-list"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                },
+                {
+                  "key": "WWW-Authenticate",
+                  "value": "Bearer"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Unauthorized\",\n  \"status\": 401,\n  \"detail\": \"Authentication is required to access this resource\",\n  \"instance\": \"/attendance/get-list\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get attendance by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/attendance/get/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "attendance",
+                "get",
+                "1"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 Attendance",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/attendance/get/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "attendance",
+                    "get",
+                    "1"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 1,\n  \"musician\": {\n    \"id\": 1,\n    \"name\": \"Mike Muscala\",\n    \"instrument\": \"Bassoon\",\n    \"bands\": [\n      {\n        \"id\": 8,\n        \"name\": \"Bebop Bureaucracy\",\n        \"genre\": \"Free Jazz\",\n        \"foundedYear\": 2023\n      },\n      {\n        \"id\": 1,\n        \"name\": \"Nocturnal Paroxysms\",\n        \"genre\": \"Ambient\",\n        \"foundedYear\": 2020\n      }\n    ]\n  },\n  \"rehearsal\": {\n    \"id\": 1,\n    \"date\": \"2025-10-12\",\n    \"durationMinutes\": 90,\n    \"band\": {\n      \"id\": 1,\n      \"name\": \"Nocturnal Paroxysms\",\n      \"genre\": \"Ambient\",\n      \"foundedYear\": 2020\n    },\n    \"rehearsalRoom\": {\n      \"id\": 3,\n      \"name\": \"Tom's Garage\",\n      \"address\": \"Mechanic Street 11\",\n      \"capacity\": 6\n    }\n  },\n  \"present\": true\n}"
+            },
+            {
+              "name": "404 Not found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/attendance/get/999",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "attendance",
+                    "get",
+                    "999"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Attendance with id 999 not found\",\n  \"instance\": \"/attendance/get/999\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create attendance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendance/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "attendance",
+                "create"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"musician\": {\n    \"id\": 1\n  },\n  \"rehearsal\": {\n    \"id\": 4\n  },\n  \"present\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "ADMIN only."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/attendance/create",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "attendance",
+                    "create"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"musician\": {\n    \"id\": 1\n  },\n  \"rehearsal\": {\n    \"id\": 4\n  },\n  \"present\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "ADMIN only."
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 10,\n  \"musician\": {\n    \"id\": 1,\n    \"name\": \"Mike Muscala\",\n    \"instrument\": \"Bassoon\",\n    \"bands\": [\n      {\n        \"id\": 8,\n        \"name\": \"Bebop Bureaucracy\",\n        \"genre\": \"Free Jazz\",\n        \"foundedYear\": 2023\n      },\n      {\n        \"id\": 1,\n        \"name\": \"Nocturnal Paroxysms\",\n        \"genre\": \"Ambient\",\n        \"foundedYear\": 2020\n      }\n    ]\n  },\n  \"rehearsal\": {\n    \"id\": 4,\n    \"date\": \"2026-05-15\",\n    \"durationMinutes\": 150,\n    \"band\": {\n      \"id\": 8,\n      \"name\": \"Bebop Bureaucracy\",\n      \"genre\": \"Free Jazz\",\n      \"foundedYear\": 2023\n    },\n    \"rehearsalRoom\": {\n      \"id\": 2,\n      \"name\": \"Spiderweb Studio\",\n      \"address\": \"Spider Street 8\",\n      \"capacity\": 8\n    }\n  },\n  \"present\": true\n}"
+            },
+            {
+              "name": "409 Already recorded",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/attendance/create",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "attendance",
+                    "create"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"musician\": {\n    \"id\": 1\n  },\n  \"rehearsal\": {\n    \"id\": 1\n  },\n  \"present\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Conflict\",\n  \"status\": 409,\n  \"detail\": \"Attendance for 'Mike Muscala' at this rehearsal already exists\",\n  \"instance\": \"/attendance/create\"\n}"
+            },
+            {
+              "name": "403 Read-only user",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/attendance/create",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "attendance",
+                    "create"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"musician\": {\n    \"id\": 1\n  },\n  \"rehearsal\": {\n    \"id\": 4\n  },\n  \"present\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "ADMIN only."
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Forbidden\",\n  \"status\": 403,\n  \"detail\": \"Your role does not allow this operation\",\n  \"instance\": \"/attendance/create\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update attendance",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendance/update",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "attendance",
+                "update"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 10,\n  \"musician\": {\n    \"id\": 1\n  },\n  \"rehearsal\": {\n    \"id\": 4\n  },\n  \"present\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "ADMIN only. The id goes in the body."
+          },
+          "response": [
+            {
+              "name": "200 Updated",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/attendance/update",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "attendance",
+                    "update"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": 10,\n  \"musician\": {\n    \"id\": 1\n  },\n  \"rehearsal\": {\n    \"id\": 4\n  },\n  \"present\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "ADMIN only. The id goes in the body."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 10,\n  \"musician\": {\n    \"id\": 1,\n    \"name\": \"Mike Muscala\",\n    \"instrument\": \"Bassoon\",\n    \"bands\": [\n      {\n        \"id\": 8,\n        \"name\": \"Bebop Bureaucracy\",\n        \"genre\": \"Free Jazz\",\n        \"foundedYear\": 2023\n      },\n      {\n        \"id\": 1,\n        \"name\": \"Nocturnal Paroxysms\",\n        \"genre\": \"Ambient\",\n        \"foundedYear\": 2020\n      }\n    ]\n  },\n  \"rehearsal\": {\n    \"id\": 4,\n    \"date\": \"2026-05-15\",\n    \"durationMinutes\": 150,\n    \"band\": {\n      \"id\": 8,\n      \"name\": \"Bebop Bureaucracy\",\n      \"genre\": \"Free Jazz\",\n      \"foundedYear\": 2023\n    },\n    \"rehearsalRoom\": {\n      \"id\": 2,\n      \"name\": \"Spiderweb Studio\",\n      \"address\": \"Spider Street 8\",\n      \"capacity\": 8\n    }\n  },\n  \"present\": false\n}"
+            },
+            {
+              "name": "404 Not found",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/attendance/update",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "attendance",
+                    "update"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": 10,\n  \"musician\": {\n    \"id\": 1\n  },\n  \"rehearsal\": {\n    \"id\": 4\n  },\n  \"present\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "ADMIN only. The id goes in the body."
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/problem+json"
+                }
+              ],
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Attendance with id 10 not found\",\n  \"instance\": \"/attendance/update\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete attendance",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/attendance/delete/10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "attendance",
+                "delete",
+                "10"
+              ]
+            },
+            "description": "ADMIN only."
+          },
+          "response": [
+            {
+              "name": "204 Deleted",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/attendance/delete/10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "attendance",
+                    "delete",
+                    "10"
+                  ]
+                },
+                "description": "ADMIN only."
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "text",
+              "header": [],
+              "body": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
