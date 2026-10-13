@@ -1,128 +1,142 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useState } from "react";
+import { useAuth } from "@/lib/auth";
+import { countLabel, formatDate } from "@/lib/format";
+import { useResource } from "@/lib/useResource";
+import { EmptyState, FormActions, Notice, PageHeader, ReadOnlyNote, RowActions } from "@/components/ui";
 
-export default function Attendances() {
-    const [attendances, setAttendances] = useState([]);
-    const [musicians, setMusicians] = useState([]);
-    const [rehearsals, setRehearsals] = useState([]);
-    const [musicianId, setMusicianId] = useState("");
-    const [rehearsalId, setRehearsalId] = useState("");
-    const [present, setPresent] = useState(false);
-    const [editingId, setEditingId] = useState(null);
+const EMPTY_FORM = { id: null, musicianId: "", rehearsalId: "", present: true };
 
-    function loadAttendances() {
-        axios.get("http://localhost:8080/attendance/get-list")
-            .then(response => setAttendances(response.data))
-            .catch(error => console.log(error));
+function rehearsalLabel(rehearsal) {
+    return `${formatDate(rehearsal.date)}, ${rehearsal.band?.name ?? "no band"}`;
+}
+
+export default function AttendancePage() {
+    const { isAdmin } = useAuth();
+    const attendances = useResource("attendance");
+    const musicians = useResource("musician");
+    const rehearsals = useResource("rehearsal");
+    const [form, setForm] = useState(EMPTY_FORM);
+    const editing = form.id !== null;
+
+    const field = (name) => (event) => setForm({ ...form, [name]: event.target.value });
+
+    // Newest rehearsal first
+    const sorted = [...attendances.items].sort((a, b) =>
+        (b.rehearsal?.date ?? "").localeCompare(a.rehearsal?.date ?? ""));
+    const rehearsalOptions = [...rehearsals.items].sort((a, b) => b.date.localeCompare(a.date));
+
+    async function handleSubmit(event) {
+        event.preventDefault();
+        const saved = await attendances.save({
+            id: form.id,
+            present: form.present,
+            musician: { id: Number(form.musicianId) },
+            rehearsal: { id: Number(form.rehearsalId) },
+        });
+        if (saved) setForm(EMPTY_FORM);
     }
 
-    function loadMusicians() {
-        axios.get("http://localhost:8080/musician/get-list")
-            .then(response => setMusicians(response.data))
-            .catch(error => console.log(error))
+    function startEditing(attendance) {
+        setForm({
+            id: attendance.id,
+            musicianId: String(attendance.musician?.id ?? ""),
+            rehearsalId: String(attendance.rehearsal?.id ?? ""),
+            present: Boolean(attendance.present),
+        });
     }
 
-    function loadRehearsals(){
-        axios.get("http://localhost:8080/rehearsal/get-list")
-            .then(response => setRehearsals(response.data))
-            .catch(error => console.log(error));
+    async function handleDelete(attendance) {
+        const who = attendance.musician?.name ?? "this musician";
+        if (!window.confirm(`Delete the attendance record for ${who}?`)) return;
+        if (await attendances.remove(attendance.id) && form.id === attendance.id) setForm(EMPTY_FORM);
     }
 
-    useEffect(() => {
-        loadAttendances();
-        loadMusicians();
-        loadRehearsals();
-    }, [])
-
-    function saveAttendance() {
-        const attendance ={
-            id: editingId,
-            present: present,
-            musician: musicianId ? { id: musicianId } : null,
-            rehearsal: rehearsalId ? { id: rehearsalId } : null
-        };
-
-        if (editingId === null) {
-            axios.post("http://localhost:8080/attendance/create", attendance)
-                .then(() => { loadAttendances(); clearForm(); })
-                .catch(error => console.log(error));
-        } else {
-            axios.put("http://localhost:8080/attendance/update", attendance)
-                .then(() => { loadAttendances(); clearForm(); })
-                .catch(error => console.log(error));
-        }
-    }
-
-    function editAttendance(attendance) {
-        setEditingId(attendance.id);
-        setPresent(attendance.present);
-        setMusicianId(attendance.musician ? attendance.musician.id : "");
-        setRehearsalId(attendance.rehearsal ? attendance.rehearsal.id : "");
-    }
-
-    function deleteAttendance(id) {
-        axios.delete("http://localhost:8080/attendance/delete/" + id)
-            .then(() => loadAttendances())
-            .catch(error => console.log(error));
-    }
-
-    function clearForm() {
-        setEditingId(null);
-        setPresent(false);
-        setMusicianId("");
-        setRehearsalId("");
-    }
+    const loadError = attendances.error ?? musicians.error ?? rehearsals.error;
 
     return (
-        <div>
-            <h1>Attendances</h1>
+        <>
+            <PageHeader channel="attendance" title="Attendance" summary={countLabel(attendances.items.length, "record")} />
+            <Notice
+                message={loadError}
+                onDismiss={() => { attendances.setError(null); musicians.setError(null); rehearsals.setError(null); }}
+            />
 
-            <div>
-                <select value={musicianId} onChange={e => setMusicianId(e.target.value)}>
-                    <option value="">-- Select musician --</option>
-                    {musicians.map(musician => (
-                        <option key={musician.id} value={musician.id}>{musician.name}</option>
-                    ))}
-                </select>
+            {isAdmin ? (
+                <form className="editor" onSubmit={handleSubmit}>
+                    <h2>{editing ? "Edit attendance" : "Record attendance"}</h2>
+                    <div className="fields">
+                        <label>
+                            Musician
+                            <select required value={form.musicianId} onChange={field("musicianId")}>
+                                <option value="">Choose a musician</option>
+                                {musicians.items.map((musician) => (
+                                    <option key={musician.id} value={musician.id}>{musician.name}</option>
+                                ))}
+                            </select>
+                        </label>
+                        <label>
+                            Rehearsal
+                            <select required value={form.rehearsalId} onChange={field("rehearsalId")}>
+                                <option value="">Choose a rehearsal</option>
+                                {rehearsalOptions.map((rehearsal) => (
+                                    <option key={rehearsal.id} value={rehearsal.id}>{rehearsalLabel(rehearsal)}</option>
+                                ))}
+                            </select>
+                        </label>
+                        <label className="inline">
+                            <input
+                                type="checkbox"
+                                checked={form.present}
+                                onChange={(e) => setForm({ ...form, present: e.target.checked })}
+                            />
+                            Was present
+                        </label>
+                    </div>
+                    <FormActions editing={editing} addLabel="Record attendance" onCancel={() => setForm(EMPTY_FORM)} />
+                </form>
+            ) : (
+                <ReadOnlyNote />
+            )}
 
-                <select value={rehearsalId} onChange={e => setRehearsalId(e.target.value)}>
-                    <option value="">-- Select rehearsal --</option>
-                    {rehearsals.map(rehearsal => (
-                        <option key={rehearsal.id} value={rehearsal.id}>
-                            {rehearsal.date} ({rehearsal.band ? rehearsal.band.name : "no band"})
-                        </option>
-                    ))}
-                </select>
-
-                <label>
-                    <input
-                        type="checkbox"
-                        checked={present}
-                        onChange={e => setPresent(e.target.checked)}
-                    />
-                    Present
-                </label>
-
-                <button onClick={saveAttendance}>
-                    {editingId === null ? "Add attendance" : "Save changes"}
-                </button>
+            <div className="table-wrap">
+                <table className="data">
+                    <thead>
+                        <tr>
+                            <th scope="col">Rehearsal</th>
+                            <th scope="col">Band</th>
+                            <th scope="col">Musician</th>
+                            <th scope="col">Status</th>
+                            {isAdmin && <th scope="col"><span className="sr-only">Actions</span></th>}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {sorted.map((attendance) => (
+                            <tr key={attendance.id} className={form.id === attendance.id ? "is-editing" : undefined}>
+                                <td className="nowrap">{formatDate(attendance.rehearsal?.date)}</td>
+                                <td>{attendance.rehearsal?.band?.name}</td>
+                                <td>{attendance.musician?.name}</td>
+                                <td>
+                                    <span className="status" data-present={attendance.present ? "yes" : "no"}>
+                                        {attendance.present ? "Present" : "Absent"}
+                                    </span>
+                                </td>
+                                {isAdmin && (
+                                    <RowActions
+                                        label={`attendance of ${attendance.musician?.name ?? "musician"}`}
+                                        onEdit={() => startEditing(attendance)}
+                                        onDelete={() => handleDelete(attendance)}
+                                    />
+                                )}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
-
-            <ul>
-                {attendances.map(attendance => (
-                    <li key={attendance.id}>
-                        {attendance.musician ? attendance.musician.name : "?"}
-                        {" - "}
-                        {attendance.rehearsal ? attendance.rehearsal.date: "?"}
-                        {" - "}
-                        {attendance.present ? "Present" : "Absent"}
-                        <button onClick={() => editAttendance(attendance)}>Edit</button>
-                        <button onClick={() => deleteAttendance(attendance.id)}>Delete</button>
-                    </li>
-                ))}
-            </ul>
-        </div>
+            {!attendances.loading && attendances.items.length === 0 && (
+                <EmptyState adminHint="Record the first one with the form above.">No attendance records yet.</EmptyState>
+            )}
+        </>
     );
 }

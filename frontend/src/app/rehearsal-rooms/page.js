@@ -1,99 +1,100 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useState } from "react";
+import { useAuth } from "@/lib/auth";
+import { countLabel, toNumberOrNull } from "@/lib/format";
+import { useResource } from "@/lib/useResource";
+import { EmptyState, FormActions, Notice, PageHeader, ReadOnlyNote, RowActions } from "@/components/ui";
 
-export default function RehearsalRooms() {
-    const [rooms, setRooms] = useState([]);
-    const [name, setName] = useState("");
-    const [address, setAddress] = useState("");
-    const [capacity, setCapacity] = useState("");
-    const [editingId, setEditingId] = useState(null);
+const EMPTY_FORM = { id: null, name: "", address: "", capacity: "" };
 
-    function loadRooms() {
-        axios.get("http://localhost:8080/rehearsal-room/get-list")
-            .then(response => setRooms(response.data))
-            .catch(error => console.log(error));
+export default function RehearsalRoomsPage() {
+    const { isAdmin } = useAuth();
+    const rooms = useResource("rehearsal-room");
+    const [form, setForm] = useState(EMPTY_FORM);
+    const editing = form.id !== null;
+
+    const field = (name) => (event) => setForm({ ...form, [name]: event.target.value });
+
+    async function handleSubmit(event) {
+        event.preventDefault();
+        const saved = await rooms.save({
+            id: form.id,
+            name: form.name.trim(),
+            address: form.address.trim(),
+            capacity: toNumberOrNull(form.capacity),
+        });
+        if (saved) setForm(EMPTY_FORM);
     }
 
-    useEffect(() => {
-        loadRooms();
-    },  []);
-
-    function saveRoom() {
-        const room = {
-            id: editingId,
-            name: name,
-            address: address,
-            capacity: capacity
-        };
-
-        if (editingId === null) {
-            axios.post("http://localhost:8080/rehearsal-room/create", room)
-                .then(() => { loadRooms(); clearForm(); })
-                .catch(error => console.log(error));
-        } else {
-            axios.put("http://localhost:8080/rehearsal-room/update ", room)
-                .then(() => { loadRooms(); clearForm(); })
-                .catch(error => console.log(error));
-        }
+    function startEditing(room) {
+        setForm({ id: room.id, name: room.name ?? "", address: room.address ?? "", capacity: room.capacity ?? "" });
     }
 
-    function editRoom(room) {
-        setEditingId(room.id);
-        setName(room.name);
-        setAddress(room.address);
-        setCapacity(room.capacity);
-    }
-
-    function deleteRoom(id) {
-        axios.delete("http://localhost:8080/rehearsal-room/delete/" + id)
-            .then(() => loadRooms())
-            .catch(error => console.log(error));
-    }
-
-    function clearForm() {
-        setEditingId(null);
-        setName("");
-        setAddress("");
-        setCapacity("");
+    async function handleDelete(room) {
+        if (!window.confirm(`Delete the room "${room.name}"?`)) return;
+        if (await rooms.remove(room.id) && form.id === room.id) setForm(EMPTY_FORM);
     }
 
     return (
-        <div>
-            <h1>Rehearsal Rooms</h1>
+        <>
+            <PageHeader channel="rooms" title="Rehearsal rooms" summary={countLabel(rooms.items.length, "room")} />
+            <Notice message={rooms.error} onDismiss={() => rooms.setError(null)} />
 
-            <div>
-                <input
-                    placeholder="Name"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                />
+            {isAdmin ? (
+                <form className="editor" onSubmit={handleSubmit}>
+                    <h2>{editing ? `Edit ${form.name || "room"}` : "Add a room"}</h2>
+                    <div className="fields">
+                        <label>
+                            Name
+                            <input required maxLength={255} value={form.name} onChange={field("name")} />
+                        </label>
+                        <label>
+                            Address
+                            <input required maxLength={255} value={form.address} onChange={field("address")} />
+                        </label>
+                        <label>
+                            Capacity (people)
+                            <input type="number" required min="1" max="100" value={form.capacity} onChange={field("capacity")} />
+                        </label>
+                    </div>
+                    <FormActions editing={editing} addLabel="Add room" onCancel={() => setForm(EMPTY_FORM)} />
+                </form>
+            ) : (
+                <ReadOnlyNote />
+            )}
 
-                <input
-                    placeholder="Address"
-                    value={address}
-                    onChange={e => setAddress(e.target.value)}
-                />
-                <input
-                    placeholder="Capacity"
-                    value={capacity}
-                    onChange={e => setCapacity(e.target.value)}
-                />
-                <button onClick={saveRoom}>
-                    {editingId === null ? "Add room" : "Save changes"}
-                </button>
+            <div className="table-wrap">
+                <table className="data">
+                    <thead>
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">Address</th>
+                            <th scope="col" className="num">Capacity</th>
+                            {isAdmin && <th scope="col"><span className="sr-only">Actions</span></th>}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rooms.items.map((room) => (
+                            <tr key={room.id} className={form.id === room.id ? "is-editing" : undefined}>
+                                <td>{room.name}</td>
+                                <td>{room.address}</td>
+                                <td className="num">{room.capacity}</td>
+                                {isAdmin && (
+                                    <RowActions
+                                        label={room.name}
+                                        onEdit={() => startEditing(room)}
+                                        onDelete={() => handleDelete(room)}
+                                    />
+                                )}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
-
-            <ul>
-                {rooms.map(room => (
-                    <li key={room.id}>
-                        {room.name} - {room.address} (capacity: {room.capacity})
-                        <button onClick={() => editRoom(room)}>Edit</button>
-                        <button onClick={() => deleteRoom(room.id)}>Delete</button>
-                    </li>
-                ))}
-            </ul>
-        </div>
+            {!rooms.loading && rooms.items.length === 0 && (
+                <EmptyState adminHint="Add the first one with the form above.">No rooms yet.</EmptyState>
+            )}
+        </>
     );
 }

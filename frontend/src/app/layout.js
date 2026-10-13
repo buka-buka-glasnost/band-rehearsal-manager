@@ -1,25 +1,21 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import AppShell from "@/components/AppShell";
+import { AuthProvider } from "@/lib/auth";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata = {
-  title: "Band Rehearsal Manager",
-  description: "Manage your label's bands musicians, and rehearsals.",
+    title: "Band Rehearsal Manager",
+    description: "Schedule rehearsals for your label's bands, book rooms and track who showed up.",
 };
 
 export default function RootLayout({ children }) {
-  return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>{children}</body>
-    </html>
-  );
+    return (
+        <html lang="en" className={GeistSans.variable}>
+            <body>
+                <AuthProvider>
+                    <AppShell>{children}</AppShell>
+                </AuthProvider>
+            </body>
+        </html>
+    );
 }

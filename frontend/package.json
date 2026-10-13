@@ -1,6 +1,6 @@
 {
-  "name": "band-rehearsal-fronted",
-  "version": "0.1.0",
+  "name": "band-rehearsal-frontend",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "axios": "^1.19.0",
+    "geist": "^1.7.2",
     "next": "16.3.1",
     "react": "19.2.8",
     "react-dom": "19.2.8"

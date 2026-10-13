@@ -1,128 +1,128 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useState } from "react";
+import { useAuth } from "@/lib/auth";
+import { countLabel } from "@/lib/format";
+import { useResource } from "@/lib/useResource";
+import { EmptyState, FormActions, Notice, PageHeader, ReadOnlyNote, RowActions } from "@/components/ui";
 
-export default function Musicians() {
-    const [musicians, setMusicians] = useState([]);
-    const [bands, setBands] = useState([]);
-    const [name, setName] = useState("");
-    const [instrument, setInstrument] = useState("");
-    const [selectedBandIds,setSelectedBandIds] = useState([]);
-    const [editingId, setEditingId] = useState(null);
+const EMPTY_FORM = { id: null, name: "", instrument: "", bandIds: [] };
 
-    function  loadMusicians() {
-        axios.get("http://localhost:8080/musician/get-list")
-            .then(response => setMusicians(response.data))
-            .catch(error => console.log(error));
+export default function MusiciansPage() {
+    const { isAdmin } = useAuth();
+    const musicians = useResource("musician");
+    const bands = useResource("band");
+    const [form, setForm] = useState(EMPTY_FORM);
+    const editing = form.id !== null;
+
+    const field = (name) => (event) => setForm({ ...form, [name]: event.target.value });
+
+    function toggleBand(bandId) {
+        const bandIds = form.bandIds.includes(bandId)
+            ? form.bandIds.filter((id) => id !== bandId)
+            : [...form.bandIds, bandId];
+        setForm({ ...form, bandIds });
     }
 
-    function loadBands() {
-        axios.get("http://localhost:8080/band/get-list")
-            .then(response => setBands(response.data))
-            .catch(error => console.log(error));
+    async function handleSubmit(event) {
+        event.preventDefault();
+        const saved = await musicians.save({
+            id: form.id,
+            name: form.name.trim(),
+            instrument: form.instrument.trim(),
+            // ManyToMany: the backend only needs the ids of the bands
+            bands: form.bandIds.map((id) => ({ id })),
+        });
+        if (saved) setForm(EMPTY_FORM);
     }
 
-    useEffect(() => {
-        loadMusicians();
-        loadBands();
-    }, []);
-
-    function  toggleBand(bandId) {
-        if (selectedBandIds.includes(bandId)) {
-            setSelectedBandIds(selectedBandIds.filter(id => id !== bandId));
-        } else {
-            setSelectedBandIds([...selectedBandIds, bandId]);
-        }
+    function startEditing(musician) {
+        setForm({
+            id: musician.id,
+            name: musician.name ?? "",
+            instrument: musician.instrument ?? "",
+            bandIds: (musician.bands ?? []).map((band) => band.id),
+        });
     }
 
-    function saveMusician() {
-        const musician = {
-            id: editingId,
-            name: name,
-            instrument: instrument,
-            bands: selectedBandIds.map(id => ({ id: id }))
-        };
-
-        if (editingId == null) {
-            axios.post("http://localhost:8080/musician/create", musician)
-                .then(() => { loadMusicians(); clearForm();})
-                .catch(error => console.log(error));
-        } else {
-            axios.put("http://localhost:8080/musician/update", musician)
-                .then(() => { loadMusicians(); clearForm(); })
-                .catch(error => console.log(error));
-        }
-    }
-
-    function editMusician(musician) {
-        setEditingId(musician.id);
-        setName(musician.name);
-        setInstrument(musician.instrument);
-        setSelectedBandIds(musician.bands ? musician.bands.map(b => b.id) : []);
-    }
-
-    function deleteMusician(id) {
-        axios.delete("http://localhost:8080/musician/delete/" + id)
-            .then(() => loadMusicians())
-            .catch(error => console.log(error));
-    }
-
-    function clearForm() {
-        setEditingId(null);
-        setName("");
-        setInstrument("");
-        setSelectedBandIds([]);
+    async function handleDelete(musician) {
+        if (!window.confirm(`Delete the musician "${musician.name}"?`)) return;
+        if (await musicians.remove(musician.id) && form.id === musician.id) setForm(EMPTY_FORM);
     }
 
     return (
-        <div>
-            <h1>Musicians</h1>
+        <>
+            <PageHeader channel="musicians" title="Musicians" summary={countLabel(musicians.items.length, "musician")} />
+            <Notice message={musicians.error ?? bands.error} onDismiss={() => { musicians.setError(null); bands.setError(null); }} />
 
-            <div>
-                <input
-                    placeholder="Name"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                />
-                <input
-                    placeholder="Instrument"
-                    value={instrument}
-                    onChange={e => setInstrument(e.target.value)}
-                />
-
-                <div>
-                    <p>Bands:</p>
-                    {bands.map(band => (
-                        <label key={band.id} style={{display: "block"}}>
-                            <input
-                                type="checkbox"
-                                checked={selectedBandIds.includes(band.id)}
-                                onChange={() => toggleBand(band.id)}
-                            />
-                            {band.name}
+            {isAdmin ? (
+                <form className="editor" onSubmit={handleSubmit}>
+                    <h2>{editing ? `Edit ${form.name || "musician"}` : "Add a musician"}</h2>
+                    <div className="fields">
+                        <label>
+                            Name
+                            <input required maxLength={255} value={form.name} onChange={field("name")} />
                         </label>
-                    ))}
-                </div>
+                        <label>
+                            Instrument
+                            <input required maxLength={255} value={form.instrument} onChange={field("instrument")} />
+                        </label>
+                    </div>
+                    <fieldset className="choices">
+                        <legend>Plays in</legend>
+                        {bands.items.length === 0 && <span className="field-help">Add a band first to link it here.</span>}
+                        {bands.items.map((band) => (
+                            <label key={band.id} className="choice">
+                                <input
+                                    type="checkbox"
+                                    checked={form.bandIds.includes(band.id)}
+                                    onChange={() => toggleBand(band.id)}
+                                />
+                                {band.name}
+                            </label>
+                        ))}
+                    </fieldset>
+                    <FormActions editing={editing} addLabel="Add musician" onCancel={() => setForm(EMPTY_FORM)} />
+                </form>
+            ) : (
+                <ReadOnlyNote />
+            )}
 
-                <button onClick={saveMusician}>
-                    {editingId === null ? "Add musician" : "Save changes"}
-                </button>
+            <div className="table-wrap">
+                <table className="data">
+                    <thead>
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">Instrument</th>
+                            <th scope="col">Bands</th>
+                            {isAdmin && <th scope="col"><span className="sr-only">Actions</span></th>}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {musicians.items.map((musician) => (
+                            <tr key={musician.id} className={form.id === musician.id ? "is-editing" : undefined}>
+                                <td>{musician.name}</td>
+                                <td>{musician.instrument}</td>
+                                <td>
+                                    {musician.bands?.length
+                                        ? musician.bands.map((band) => band.name).join(", ")
+                                        : <span className="muted">No band</span>}
+                                </td>
+                                {isAdmin && (
+                                    <RowActions
+                                        label={musician.name}
+                                        onEdit={() => startEditing(musician)}
+                                        onDelete={() => handleDelete(musician)}
+                                    />
+                                )}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
-
-            <ul>
-                {musicians.map(musician => (
-                    <li key={musician.id}>
-                        {musician.name} - {musician.instrument}
-                        {musician.bands && musician.bands.length > 0
-                            ? " (" + musician.bands.map(b => b.name).join(", ") + ")"
-                            : ""
-                        }
-                        <button onClick={() => editMusician(musician)}>Edit</button>
-                        <button onClick={() => deleteMusician(musician.id)}>Delete</button>
-                    </li>
-                ))}
-            </ul>
-        </div>
+            {!musicians.loading && musicians.items.length === 0 && (
+                <EmptyState adminHint="Add the first one with the form above.">No musicians yet.</EmptyState>
+            )}
+        </>
     );
 }

@@ -1,99 +1,100 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useState } from "react";
+import { useAuth } from "@/lib/auth";
+import { countLabel, toNumberOrNull } from "@/lib/format";
+import { useResource } from "@/lib/useResource";
+import { EmptyState, FormActions, Notice, PageHeader, ReadOnlyNote, RowActions } from "@/components/ui";
 
-export default function Bands() {
-  const [bands, setBands] = useState([]);
-  const [name, setName] = useState("");
-  const[genre, setGenre] = useState("");
-  const[foundedYear, setFoundedYear] = useState("");
-  const [editingId, setEditingId] = useState(null);
+const EMPTY_FORM = { id: null, name: "", genre: "", foundedYear: "" };
 
-  function loadBands() {
-      axios.get("http://localhost:8080/band/get-list")
-          .then(response => setBands(response.data))
-          .catch(error => console.log(error));
-  }
+export default function BandsPage() {
+    const { isAdmin } = useAuth();
+    const bands = useResource("band");
+    const [form, setForm] = useState(EMPTY_FORM);
+    const editing = form.id !== null;
 
-   useEffect(() => {
-        loadBands();
-   }, []);
+    const field = (name) => (event) => setForm({ ...form, [name]: event.target.value });
 
-  function saveBand() {
-      const band = {
-          id: editingId,
-          name: name,
-          genre: genre,
-          foundedYear: foundedYear
-      };
+    async function handleSubmit(event) {
+        event.preventDefault();
+        const saved = await bands.save({
+            id: form.id,
+            name: form.name.trim(),
+            genre: form.genre.trim(),
+            foundedYear: toNumberOrNull(form.foundedYear),
+        });
+        if (saved) setForm(EMPTY_FORM);
+    }
 
-      if (editingId === null) {
-          axios.post("http://localhost:8080/band/create", band)
-              .then(() => { loadBands(); clearForm(); })
-              .catch(error => console.log(error));
-      } else {
-          axios.put("http://localhost:8080/band/update", band)
-              .then(() => { loadBands(); clearForm(); })
-              .catch(error => console.log(error));
-      }
-  }
-  function editBand(band) {
-      setEditingId(band.id);
-      setName(band.name);
-      setGenre(band.genre);
-      setFoundedYear((band.foundedYear));
-  }
+    function startEditing(band) {
+        setForm({ id: band.id, name: band.name ?? "", genre: band.genre ?? "", foundedYear: band.foundedYear ?? "" });
+    }
 
-  function clearForm() {
-      setEditingId(null);
-      setName("");
-      setGenre("");
-      setFoundedYear("");
-  }
+    async function handleDelete(band) {
+        if (!window.confirm(`Delete the band "${band.name}"?`)) return;
+        if (await bands.remove(band.id) && form.id === band.id) setForm(EMPTY_FORM);
+    }
 
-  function deleteBand(id) {
-      axios.delete("http://localhost:8080/band/delete/" + id)
-          .then(() => loadBands())
-          .catch(error => console.log(error));
-  }
+    return (
+        <>
+            <PageHeader channel="bands" title="Bands" summary={countLabel(bands.items.length, "band")} />
+            <Notice message={bands.error} onDismiss={() => bands.setError(null)} />
 
-  return (
-      <div>
-          <h1>Bands</h1>
+            {isAdmin ? (
+                <form className="editor" onSubmit={handleSubmit}>
+                    <h2>{editing ? `Edit ${form.name || "band"}` : "Add a band"}</h2>
+                    <div className="fields">
+                        <label>
+                            Name
+                            <input required maxLength={255} value={form.name} onChange={field("name")} />
+                        </label>
+                        <label>
+                            Genre
+                            <input required maxLength={255} value={form.genre} onChange={field("genre")} />
+                        </label>
+                        <label>
+                            Founded in
+                            <input type="number" min="1900" max="2100" value={form.foundedYear} onChange={field("foundedYear")} />
+                        </label>
+                    </div>
+                    <FormActions editing={editing} addLabel="Add band" onCancel={() => setForm(EMPTY_FORM)} />
+                </form>
+            ) : (
+                <ReadOnlyNote />
+            )}
 
-          <div>
-
-            <input
-                placeholder="Band name"
-                value={name}
-                onChange={e => setName(e.target.value)}
-            />
-            <input
-                placeholder="Genre"
-                value={genre}
-                onChange={e => setGenre(e.target.value)}
-            />
-            <input
-                placeholder="Year founded"
-                value={foundedYear}
-                onChange={e => setFoundedYear(e.target.value)}
-            />
-            <button onClick={saveBand}>
-                {editingId === null ? "Add band" : "Save changes"}</button>
-          </div>
-
-
-        <ul>
-          {bands.map(band => (
-              <li key={band.id}>
-                  {band.name} - {band.genre} ({band.foundedYear})
-                  <button onClick={() => editBand(band)}>Edit</button>
-                  <button onClick={() => deleteBand(band.id)}>Delete</button>
-              </li>
-          ))}
-        </ul>
-
-      </div>
-  );
+            <div className="table-wrap">
+                <table className="data">
+                    <thead>
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">Genre</th>
+                            <th scope="col" className="num">Founded</th>
+                            {isAdmin && <th scope="col"><span className="sr-only">Actions</span></th>}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {bands.items.map((band) => (
+                            <tr key={band.id} className={form.id === band.id ? "is-editing" : undefined}>
+                                <td>{band.name}</td>
+                                <td>{band.genre}</td>
+                                <td className="num">{band.foundedYear}</td>
+                                {isAdmin && (
+                                    <RowActions
+                                        label={band.name}
+                                        onEdit={() => startEditing(band)}
+                                        onDelete={() => handleDelete(band)}
+                                    />
+                                )}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            {!bands.loading && bands.items.length === 0 && (
+                <EmptyState adminHint="Add the first one with the form above.">No bands yet.</EmptyState>
+            )}
+        </>
+    );
 }
