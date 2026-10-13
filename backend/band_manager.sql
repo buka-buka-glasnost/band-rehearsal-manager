@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS `bands` (
 INSERT INTO `bands` (`id`, `founded_year`, `genre`, `name`) VALUES
 	(1, 2020, 'Ambient', 'Nocturnal Paroxysms'),
 	(4, 2012, 'Gothic Turbo Folk', 'Plastic Elastic Fantastic'),
-	(8, 2023, 'Free Jazz', 'Updated Band');
+	(8, 2023, 'Free Jazz', 'Bebop Bureaucracy');
 
 -- Dumping structure for table band_manager.musicians
 CREATE TABLE IF NOT EXISTS `musicians` (
@@ -81,6 +81,21 @@ CREATE TABLE IF NOT EXISTS `musicians` (
 INSERT INTO `musicians` (`id`, `instrument`, `name`) VALUES
 	(1, 'Bassoon', 'Mike Muscala'),
 	(2, 'Harp', 'Johnny Jackal');
+
+-- Dumping structure for table band_manager.refresh_tokens
+-- (only a SHA-256 hash of each refresh token is stored)
+CREATE TABLE IF NOT EXISTS `refresh_tokens` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) NOT NULL,
+  `expires_at` datetime(6) NOT NULL,
+  `revoked` bit(1) NOT NULL,
+  `token_hash` varchar(64) NOT NULL,
+  `user_id` bigint(20) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UK_refresh_tokens_token_hash` (`token_hash`),
+  KEY `FK_refresh_tokens_user` (`user_id`),
+  CONSTRAINT `FK_refresh_tokens_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping structure for table band_manager.rehearsal_rooms
 CREATE TABLE IF NOT EXISTS `rehearsal_rooms` (
@@ -117,6 +132,18 @@ INSERT INTO `rehearsals` (`id`, `date`, `duration_minutes`, `band_id`, `room_id`
 	(1, '2025-10-12', 90, 1, 3),
 	(3, '2023-11-30', 120, 4, 1),
 	(4, '2026-05-15', 150, 8, 2);
+
+-- Dumping structure for table band_manager.users
+-- The demo accounts (admin / user) are created by the application on startup,
+-- so that the passwords are hashed with BCrypt by the same code that checks them.
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `password` varchar(255) NOT NULL,
+  `role` varchar(20) NOT NULL,
+  `username` varchar(50) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UK_users_username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

@@ -1,34 +1,92 @@
 package com.bandrehearsal.bandrehearsalmanager.services;
 
+import com.bandrehearsal.bandrehearsalmanager.exceptions.BadRequestException;
+import com.bandrehearsal.bandrehearsalmanager.exceptions.ConflictException;
+import com.bandrehearsal.bandrehearsalmanager.exceptions.ResourceNotFoundException;
+import com.bandrehearsal.bandrehearsalmanager.models.Band;
 import com.bandrehearsal.bandrehearsalmanager.models.Musician;
+import com.bandrehearsal.bandrehearsalmanager.repositories.IBandRepository;
 import com.bandrehearsal.bandrehearsalmanager.repositories.IMusicianRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.bandrehearsal.bandrehearsalmanager.services.ServiceSupport.referenceId;
+import static com.bandrehearsal.bandrehearsalmanager.services.ServiceSupport.requireId;
 
 @Service
 public class MusicianService implements IMusicianService {
 
-    @Autowired
-    private IMusicianRepository musicianRepository;
+    private final IMusicianRepository musicianRepository;
+    private final IBandRepository bandRepository;
+
+    public MusicianService(IMusicianRepository musicianRepository, IBandRepository bandRepository) {
+        this.musicianRepository = musicianRepository;
+        this.bandRepository = bandRepository;
+    }
 
     @Override
-    public List<Musician> findAll(){
+    public List<Musician> findAll() {
         return musicianRepository.findAll();
     }
 
     @Override
     public Musician findById(Long id) {
-        return musicianRepository.findById(id).orElse(null);
+        return musicianRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Musician with id " + id + " not found"));
     }
 
     @Override
-    public Musician save(Musician musician) {
+    @Transactional
+    public Musician create(Musician musician) {
+        List<Band> bands = resolveBands(musician.getBands());
+        musician.setId(null);
+        musician.setBands(bands);
         return musicianRepository.save(musician);
     }
 
     @Override
+    @Transactional
+    public Musician update(Musician musician) {
+        Musician existing = findById(requireId(musician.getId()));
+        List<Band> bands = resolveBands(musician.getBands());
+        existing.setName(musician.getName());
+        existing.setInstrument(musician.getInstrument());
+        existing.getBands().clear();
+        existing.getBands().addAll(bands);
+        return existing;
+    }
+
+    @Override
+    @Transactional
     public void deleteById(Long id) {
-        musicianRepository.deleteById(id);
+        Musician musician = findById(id);
+        if (!musician.getAttendances().isEmpty()) {
+            throw new ConflictException("Musician '" + musician.getName() + "' has attendance records; delete them first");
+        }
+        musicianRepository.delete(musician);
+    }
+
+    /** The client sends bands as [{ "id": 1 }, ...]; load the real entities and reject unknown ids. */
+    private List<Band> resolveBands(List<Band> references) {
+        if (references == null || references.isEmpty()) {
+            return new ArrayList<>();
+        }
+        Set<Long> ids = references.stream()
+                .map(band -> referenceId(band.getId(), "bands"))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        List<Band> bands = bandRepository.findAllById(ids);
+        if (bands.size() != ids.size()) {
+            Set<Long> found = bands.stream().map(Band::getId).collect(Collectors.toSet());
+            ids.removeAll(found);
+            throw new BadRequestException("Unknown band id(s): " + ids);
+        }
+        return new ArrayList<>(bands);
     }
 }

@@ -2,40 +2,46 @@ package com.bandrehearsal.bandrehearsalmanager.controllers;
 
 import com.bandrehearsal.bandrehearsalmanager.models.RehearsalRoom;
 import com.bandrehearsal.bandrehearsalmanager.services.IRehearsalRoomService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
-@RequestMapping("rehearsal-room")
-@CrossOrigin("*")
+@RequestMapping("/rehearsal-room")
 public class RehearsalRoomController {
 
-    @Autowired
-    private IRehearsalRoomService rehearsalRoomService;
+    private final IRehearsalRoomService rehearsalRoomService;
 
-    @GetMapping("get-list")
+    public RehearsalRoomController(IRehearsalRoomService rehearsalRoomService) {
+        this.rehearsalRoomService = rehearsalRoomService;
+    }
+
+    @GetMapping("/get-list")
     public List<RehearsalRoom> getList() {
         return rehearsalRoomService.findAll();
     }
 
-    @GetMapping("get/{id}")
+    @GetMapping("/get/{id}")
     public RehearsalRoom getById(@PathVariable Long id) {
         return rehearsalRoomService.findById(id);
     }
 
-    @PostMapping("create")
-    public RehearsalRoom create (@RequestBody RehearsalRoom rehearsalRoom) {
-        return rehearsalRoomService.save(rehearsalRoom);
+    @PostMapping("/create")
+    public ResponseEntity<RehearsalRoom> create(@Valid @RequestBody RehearsalRoom rehearsalRoom) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(rehearsalRoomService.create(rehearsalRoom));
     }
 
-    @PutMapping("update")
-    public RehearsalRoom update(@RequestBody RehearsalRoom rehearsalRoom) {
-        return rehearsalRoomService.save(rehearsalRoom);
+    @PutMapping("/update")
+    public RehearsalRoom update(@Valid @RequestBody RehearsalRoom rehearsalRoom) {
+        return rehearsalRoomService.update(rehearsalRoom);
     }
 
-    @DeleteMapping("delete/{id}")
-    public void delete(@PathVariable Long id) {
-        rehearsalRoomService.deleteById((id));
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        rehearsalRoomService.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }
