@@ -10,6 +10,15 @@ export function formatDate(isoDate) {
     }).format(new Date(year, month - 1, day));
 }
 
+// "2026-10-20" -> "Tuesday 20 October", with the year only when it is not this year
+export function formatDateLong(isoDate) {
+    if (!isoDate) return "";
+    const [year, month, day] = isoDate.split("-").map(Number);
+    const options = { weekday: "long", day: "numeric", month: "long" };
+    if (year !== new Date().getFullYear()) options.year = "numeric";
+    return new Intl.DateTimeFormat("en-GB", options).format(new Date(year, month - 1, day));
+}
+
 // 150 -> "2 h 30 min"
 export function formatDuration(minutes) {
     if (minutes == null) return "";

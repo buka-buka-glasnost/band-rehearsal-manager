@@ -38,7 +38,7 @@ export default function RehearsalRoomsPage() {
 
     return (
         <>
-            <PageHeader channel="rooms" title="Rehearsal rooms" summary={countLabel(rooms.items.length, "room")} />
+            <PageHeader title="Rooms" note={countLabel(rooms.items.length, "room")} />
             <Notice message={rooms.error} onDismiss={() => rooms.setError(null)} />
 
             {isAdmin ? (
@@ -77,7 +77,7 @@ export default function RehearsalRoomsPage() {
                     <tbody>
                         {rooms.items.map((room) => (
                             <tr key={room.id} className={form.id === room.id ? "is-editing" : undefined}>
-                                <td>{room.name}</td>
+                                <td className="lead-cell">{room.name}</td>
                                 <td>{room.address}</td>
                                 <td className="num">{room.capacity}</td>
                                 {isAdmin && (

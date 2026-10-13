@@ -9,7 +9,7 @@ import { SECTIONS } from "@/lib/sections";
 const PUBLIC_PATHS = ["/login", "/register"];
 
 // Wraps every page: sends logged-out visitors to /login, and shows the
-// navigation bar with the current user once someone is logged in.
+// masthead with the navigation and the current user once someone is logged in.
 export default function AppShell({ children }) {
     const { user, ready, logout } = useAuth();
     const pathname = usePathname();
@@ -36,34 +36,31 @@ export default function AppShell({ children }) {
 
     return (
         <>
-            <header className="topbar">
-                <Link href="/" className="brand">Band Rehearsal Manager</Link>
+            <header className="masthead">
+                <div className="masthead-row">
+                    <Link href="/" className="brand">Band Rehearsal Manager</Link>
+                    <div className="account">
+                        <span className="account-name">{user.username}</span>
+                        <span className="sticker" data-role={user.role}>
+                            {user.role === "ADMIN" ? "Admin" : "Read-only"}
+                        </span>
+                        <button type="button" className="button small" onClick={handleLogout}>
+                            Log out
+                        </button>
+                    </div>
+                </div>
 
                 <nav className="sections" aria-label="Sections">
-                    {SECTIONS.map((section) => {
-                        const active = pathname.startsWith(section.href);
-                        return (
-                            <Link
-                                key={section.href}
-                                href={section.href}
-                                data-channel={section.channel}
-                                aria-current={active ? "page" : undefined}
-                            >
-                                {section.label}
-                            </Link>
-                        );
-                    })}
+                    {SECTIONS.map((section) => (
+                        <Link
+                            key={section.href}
+                            href={section.href}
+                            aria-current={pathname.startsWith(section.href) ? "page" : undefined}
+                        >
+                            {section.label}
+                        </Link>
+                    ))}
                 </nav>
-
-                <div className="account">
-                    <span className="account-name">{user.username}</span>
-                    <span className="role" data-role={user.role}>
-                        {user.role === "ADMIN" ? "Admin" : "Read-only"}
-                    </span>
-                    <button type="button" className="button small" onClick={handleLogout}>
-                        Log out
-                    </button>
-                </div>
             </header>
             <main className="page">{children}</main>
         </>

@@ -38,7 +38,7 @@ export default function BandsPage() {
 
     return (
         <>
-            <PageHeader channel="bands" title="Bands" summary={countLabel(bands.items.length, "band")} />
+            <PageHeader title="Bands" note={countLabel(bands.items.length, "band")} />
             <Notice message={bands.error} onDismiss={() => bands.setError(null)} />
 
             {isAdmin ? (
@@ -77,7 +77,7 @@ export default function BandsPage() {
                     <tbody>
                         {bands.items.map((band) => (
                             <tr key={band.id} className={form.id === band.id ? "is-editing" : undefined}>
-                                <td>{band.name}</td>
+                                <td className="lead-cell">{band.name}</td>
                                 <td>{band.genre}</td>
                                 <td className="num">{band.foundedYear}</td>
                                 {isAdmin && (

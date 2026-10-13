@@ -52,7 +52,7 @@ export default function MusiciansPage() {
 
     return (
         <>
-            <PageHeader channel="musicians" title="Musicians" summary={countLabel(musicians.items.length, "musician")} />
+            <PageHeader title="Musicians" note={countLabel(musicians.items.length, "musician")} />
             <Notice message={musicians.error ?? bands.error} onDismiss={() => { musicians.setError(null); bands.setError(null); }} />
 
             {isAdmin ? (
@@ -101,7 +101,7 @@ export default function MusiciansPage() {
                     <tbody>
                         {musicians.items.map((musician) => (
                             <tr key={musician.id} className={form.id === musician.id ? "is-editing" : undefined}>
-                                <td>{musician.name}</td>
+                                <td className="lead-cell">{musician.name}</td>
                                 <td>{musician.instrument}</td>
                                 <td>
                                     {musician.bands?.length

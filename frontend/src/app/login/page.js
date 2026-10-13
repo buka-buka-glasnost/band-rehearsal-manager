@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { errorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { Notice } from "@/components/ui";
+import { Notice, RisoHeading } from "@/components/ui";
 
 export default function LoginPage() {
     const { login, sessionExpired } = useAuth();
@@ -29,46 +29,51 @@ export default function LoginPage() {
     }
 
     return (
-        <form className="auth-card" onSubmit={handleSubmit}>
-            <p className="brand">Band Rehearsal Manager</p>
-            <h1>Log in</h1>
+        <>
+            <div className="poster">
+                <RisoHeading as="p" aria-hidden="true">Band Rehearsal Manager</RisoHeading>
+                <p className="tagline">Book rooms, schedule rehearsals and see who showed up.</p>
+            </div>
+            <form className="auth-card" onSubmit={handleSubmit}>
+                <h1>Log in</h1>
 
-            {sessionExpired && !error && (
-                <p className="read-only">Your session has ended. Log in again to continue.</p>
-            )}
-            <Notice message={error} />
+                {sessionExpired && !error && (
+                    <p className="read-only">Your session has ended. Log in again to continue.</p>
+                )}
+                <Notice message={error} />
 
-            <label>
-                Username
-                <input
-                    autoComplete="username"
-                    required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                />
-            </label>
-            <label>
-                Password
-                <input
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
-            </label>
+                <label>
+                    Username
+                    <input
+                        autoComplete="username"
+                        required
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                    />
+                </label>
+                <label>
+                    Password
+                    <input
+                        type="password"
+                        autoComplete="current-password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
+                </label>
 
-            <button type="submit" className="button primary" disabled={submitting}>
-                {submitting ? "Logging in…" : "Log in"}
-            </button>
+                <button type="submit" className="button primary" disabled={submitting}>
+                    {submitting ? "Logging in…" : "Log in"}
+                </button>
 
-            <p className="auth-switch">
-                No account yet? <Link href="/register">Create one</Link>
-            </p>
-            <p className="hint">
-                A fresh install has two demo accounts: <strong>admin</strong> / admin123 can make changes,
-                {" "}<strong>user</strong> / user123 can only view.
-            </p>
-        </form>
+                <p className="auth-switch">
+                    No account yet? <Link href="/register">Create one</Link>
+                </p>
+                <p className="hint">
+                    A fresh install has two demo accounts: <strong>admin</strong> / admin123 can make changes,
+                    {" "}<strong>user</strong> / user123 can only view.
+                </p>
+            </form>
+        </>
     );
 }

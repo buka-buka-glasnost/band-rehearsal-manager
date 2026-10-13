@@ -14,7 +14,7 @@ band-rehearsal-manager/
 
 Built as the final project for the *Internet Software Architectures* course at Singidunum University.
 
-![Upcoming rehearsals for a logged-in admin](docs/screenshots/home.png)
+![The home page shows the next rehearsal as a gig flyer](docs/screenshots/home.png)
 
 ## Features
 
@@ -25,10 +25,11 @@ Built as the final project for the *Internet Software Architectures* course at S
 - **Refresh token rotation with reuse detection**: every refresh token works once. Presenting a used token again revokes all of that user's sessions.
 - **Consistent errors**: every error is an [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) *problem details* JSON with the right status (400, 401, 403, 404, 409), including per-field validation messages.
 - **Integration tests** for the whole auth flow and the CRUD rules, running against an in-memory H2 database.
+- **A risograph-zine look**: two inks printed slightly out of register, notes in marker, the next rehearsal set like a gig flyer. Works on phones and in dark mode.
 
 | Admin view | Read-only view | Phone, dark mode |
 |---|---|---|
-| ![Editing a band as admin](docs/screenshots/bands-admin.png) | ![The same list as a read-only user](docs/screenshots/bands-read-only.png) | ![Rehearsals on a phone in dark mode](docs/screenshots/rehearsals-mobile-dark.png) |
+| ![Editing a band as admin](docs/screenshots/bands-admin.png) | ![The same list as a read-only user](docs/screenshots/bands-read-only.png) | ![The home page on a phone in dark mode](docs/screenshots/home-mobile-dark.png) |
 
 ## Tech stack
 

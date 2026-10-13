@@ -2,12 +2,22 @@
 
 import { useAuth } from "@/lib/auth";
 
-// The page title, written on a strip of console tape in the section's colour
-export function PageHeader({ channel, title, summary }) {
+// A headline printed in two inks, slightly out of register. The text is repeated in
+// data-text so CSS can print the pink pass; screen readers only read it once.
+export function RisoHeading({ as: Tag = "h1", children, className = "", ...props }) {
     return (
-        <div className="page-header" data-channel={channel}>
-            <h1 className="tape">{title}</h1>
-            {summary && <p className="summary">{summary}</p>}
+        <Tag className={`riso ${className}`.trim()} data-text={children} {...props}>
+            {children}
+        </Tag>
+    );
+}
+
+// Page title with an optional marker note next to it, e.g. "6 rehearsals"
+export function PageHeader({ title, note }) {
+    return (
+        <div className="page-header">
+            <RisoHeading>{title}</RisoHeading>
+            {note && <p className="scrawl">{note}</p>}
         </div>
     );
 }

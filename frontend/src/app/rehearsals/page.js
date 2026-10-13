@@ -54,7 +54,7 @@ export default function RehearsalsPage() {
 
     return (
         <>
-            <PageHeader channel="rehearsals" title="Rehearsals" summary={countLabel(rehearsals.items.length, "rehearsal")} />
+            <PageHeader title="Rehearsals" note={countLabel(rehearsals.items.length, "rehearsal")} />
             <Notice
                 message={loadError}
                 onDismiss={() => { rehearsals.setError(null); bands.setError(null); rooms.setError(null); }}
@@ -125,9 +125,9 @@ export default function RehearsalsPage() {
                                 <tr key={rehearsal.id} className={classes || undefined}>
                                     <td className="nowrap">
                                         {formatDate(rehearsal.date)}
-                                        {past && <span className="sub">Past</span>}
+                                        {past && <span className="sub scrawl">Past</span>}
                                     </td>
-                                    <td>{rehearsal.band?.name}</td>
+                                    <td className="lead-cell">{rehearsal.band?.name}</td>
                                     <td>{rehearsal.rehearsalRoom?.name}</td>
                                     <td className="num nowrap">{formatDuration(rehearsal.durationMinutes)}</td>
                                     {isAdmin && (

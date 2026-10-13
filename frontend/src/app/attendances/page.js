@@ -57,7 +57,7 @@ export default function AttendancePage() {
 
     return (
         <>
-            <PageHeader channel="attendance" title="Attendance" summary={countLabel(attendances.items.length, "record")} />
+            <PageHeader title="Attendance" note={countLabel(attendances.items.length, "record")} />
             <Notice
                 message={loadError}
                 onDismiss={() => { attendances.setError(null); musicians.setError(null); rehearsals.setError(null); }}
@@ -116,7 +116,7 @@ export default function AttendancePage() {
                             <tr key={attendance.id} className={form.id === attendance.id ? "is-editing" : undefined}>
                                 <td className="nowrap">{formatDate(attendance.rehearsal?.date)}</td>
                                 <td>{attendance.rehearsal?.band?.name}</td>
-                                <td>{attendance.musician?.name}</td>
+                                <td className="lead-cell">{attendance.musician?.name}</td>
                                 <td>
                                     <span className="status" data-present={attendance.present ? "yes" : "no"}>
                                         {attendance.present ? "Present" : "Absent"}

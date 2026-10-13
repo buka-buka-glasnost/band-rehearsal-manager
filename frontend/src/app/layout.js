@@ -1,4 +1,5 @@
-import { GeistSans } from "geist/font/sans";
+import "@fontsource-variable/archivo/wdth.css";
+import "@fontsource/permanent-marker/400.css";
 import AppShell from "@/components/AppShell";
 import { AuthProvider } from "@/lib/auth";
 import "./globals.css";
@@ -10,7 +11,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
     return (
-        <html lang="en" className={GeistSans.variable}>
+        <html lang="en">
             <body>
                 <AuthProvider>
                     <AppShell>{children}</AppShell>
