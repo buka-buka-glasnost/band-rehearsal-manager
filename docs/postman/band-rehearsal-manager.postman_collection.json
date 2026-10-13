@@ -1935,7 +1935,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n  {\n    \"id\": 1,\n    \"date\": \"2025-10-12\",\n    \"durationMinutes\": 90,\n    \"band\": {\n      \"id\": 1,\n      \"name\": \"Nocturnal Paroxysms\",\n      \"genre\": \"Ambient\",\n      \"foundedYear\": 2020\n    },\n    \"rehearsalRoom\": {\n      \"id\": 3,\n      \"name\": \"Tom's Garage\",\n      \"address\": \"Mechanic Street 11\",\n      \"capacity\": 6\n    }\n  },\n  {\n    \"id\": 3,\n    \"date\": \"2023-11-30\",\n    \"durationMinutes\": 120,\n    \"band\": {\n      \"id\": 4,\n      \"name\": \"Plastic Elastic Fantastic\",\n      \"genre\": \"Gothic Turbo Folk\",\n      \"foundedYear\": 2012\n    },\n    \"rehearsalRoom\": {\n      \"id\": 1,\n      \"name\": \"Garfield the Pirate\",\n      \"address\": \"Lasagna Street 10\",\n      \"capacity\": 8\n    }\n  },\n  {\n    \"id\": 4,\n    \"date\": \"2026-05-15\",\n    \"durationMinutes\": 150,\n    \"band\": {\n      \"id\": 8,\n      \"name\": \"Bebop Bureaucracy\",\n      \"genre\": \"Free Jazz\",\n      \"foundedYear\": 2023\n    },\n    \"rehearsalRoom\": {\n      \"id\": 2,\n      \"name\": \"Spiderweb Studio\",\n      \"address\": \"Spider Street 8\",\n      \"capacity\": 8\n    }\n  }\n]"
+              "body": "[\n  {\n    \"id\": 1,\n    \"date\": \"2025-10-12\",\n    \"durationMinutes\": 90,\n    \"band\": {\n      \"id\": 1,\n      \"name\": \"Nocturnal Paroxysms\",\n      \"genre\": \"Ambient\",\n      \"foundedYear\": 2020\n    },\n    \"rehearsalRoom\": {\n      \"id\": 3,\n      \"name\": \"Tom's Garage\",\n      \"address\": \"Mechanic Street 11\",\n      \"capacity\": 6\n    }\n  },\n  {\n    \"id\": 3,\n    \"date\": \"2023-11-30\",\n    \"durationMinutes\": 120,\n    \"band\": {\n      \"id\": 4,\n      \"name\": \"Plastic Elastic Fantastic\",\n      \"genre\": \"Gothic Turbo Folk\",\n      \"foundedYear\": 2012\n    },\n    \"rehearsalRoom\": {\n      \"id\": 1,\n      \"name\": \"Garfield the Pirate\",\n      \"address\": \"Lasagna Street 10\",\n      \"capacity\": 8\n    }\n  },\n  {\n    \"id\": 4,\n    \"date\": \"2026-05-15\",\n    \"durationMinutes\": 150,\n    \"band\": {\n      \"id\": 8,\n      \"name\": \"Bebop Bureaucracy\",\n      \"genre\": \"Free Jazz\",\n      \"foundedYear\": 2023\n    },\n    \"rehearsalRoom\": {\n      \"id\": 2,\n      \"name\": \"Spiderweb Studio\",\n      \"address\": \"Spider Street 8\",\n      \"capacity\": 8\n    }\n  },\n  {\n    \"id\": 5,\n    \"date\": \"2026-10-20\",\n    \"durationMinutes\": 90,\n    \"band\": {\n      \"id\": 4,\n      \"name\": \"Plastic Elastic Fantastic\",\n      \"genre\": \"Gothic Turbo Folk\",\n      \"foundedYear\": 2012\n    },\n    \"rehearsalRoom\": {\n      \"id\": 2,\n      \"name\": \"Spiderweb Studio\",\n      \"address\": \"Spider Street 8\",\n      \"capacity\": 8\n    }\n  },\n  {\n    \"id\": 6,\n    \"date\": \"2026-11-02\",\n    \"durationMinutes\": 120,\n    \"band\": {\n      \"id\": 1,\n      \"name\": \"Nocturnal Paroxysms\",\n      \"genre\": \"Ambient\",\n      \"foundedYear\": 2020\n    },\n    \"rehearsalRoom\": {\n      \"id\": 5,\n      \"name\": \"Jimmy Jazz Studio\",\n      \"address\": \"Dizzy Street 23\",\n      \"capacity\": 10\n    }\n  },\n  {\n    \"id\": 7,\n    \"date\": \"2026-12-01\",\n    \"durationMinutes\": 120,\n    \"band\": {\n      \"id\": 8,\n      \"name\": \"Bebop Bureaucracy\",\n      \"genre\": \"Free Jazz\",\n      \"foundedYear\": 2023\n    },\n    \"rehearsalRoom\": {\n      \"id\": 5,\n      \"name\": \"Jimmy Jazz Studio\",\n      \"address\": \"Dizzy Street 23\",\n      \"capacity\": 10\n    }\n  },\n  {\n    \"id\": 8,\n    \"date\": \"2027-01-15\",\n    \"durationMinutes\": 150,\n    \"band\": {\n      \"id\": 4,\n      \"name\": \"Plastic Elastic Fantastic\",\n      \"genre\": \"Gothic Turbo Folk\",\n      \"foundedYear\": 2012\n    },\n    \"rehearsalRoom\": {\n      \"id\": 3,\n      \"name\": \"Tom's Garage\",\n      \"address\": \"Mechanic Street 11\",\n      \"capacity\": 6\n    }\n  }\n]"
             },
             {
               "name": "401 No token",
@@ -2118,7 +2118,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": 8,\n  \"date\": \"2026-11-20\",\n  \"durationMinutes\": 120,\n  \"band\": {\n    \"id\": 1,\n    \"name\": \"Nocturnal Paroxysms\",\n    \"genre\": \"Ambient\",\n    \"foundedYear\": 2020\n  },\n  \"rehearsalRoom\": {\n    \"id\": 5,\n    \"name\": \"Jimmy Jazz Studio\",\n    \"address\": \"Dizzy Street 23\",\n    \"capacity\": 10\n  }\n}"
+              "body": "{\n  \"id\": 10,\n  \"date\": \"2026-11-20\",\n  \"durationMinutes\": 120,\n  \"band\": {\n    \"id\": 1,\n    \"name\": \"Nocturnal Paroxysms\",\n    \"genre\": \"Ambient\",\n    \"foundedYear\": 2020\n  },\n  \"rehearsalRoom\": {\n    \"id\": 5,\n    \"name\": \"Jimmy Jazz Studio\",\n    \"address\": \"Dizzy Street 23\",\n    \"capacity\": 10\n  }\n}"
             },
             {
               "name": "400 Unknown band",
@@ -2227,7 +2227,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": 8,\n  \"date\": \"2026-11-21\",\n  \"durationMinutes\": 90,\n  \"band\": {\n    \"id\": 1\n  },\n  \"rehearsalRoom\": {\n    \"id\": 3\n  }\n}",
+              "raw": "{\n  \"id\": 10,\n  \"date\": \"2026-11-21\",\n  \"durationMinutes\": 90,\n  \"band\": {\n    \"id\": 1\n  },\n  \"rehearsalRoom\": {\n    \"id\": 3\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2259,7 +2259,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"id\": 8,\n  \"date\": \"2026-11-21\",\n  \"durationMinutes\": 90,\n  \"band\": {\n    \"id\": 1\n  },\n  \"rehearsalRoom\": {\n    \"id\": 3\n  }\n}",
+                  "raw": "{\n  \"id\": 10,\n  \"date\": \"2026-11-21\",\n  \"durationMinutes\": 90,\n  \"band\": {\n    \"id\": 1\n  },\n  \"rehearsalRoom\": {\n    \"id\": 3\n  }\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2277,7 +2277,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"id\": 8,\n  \"date\": \"2026-11-21\",\n  \"durationMinutes\": 90,\n  \"band\": {\n    \"id\": 1,\n    \"name\": \"Nocturnal Paroxysms\",\n    \"genre\": \"Ambient\",\n    \"foundedYear\": 2020\n  },\n  \"rehearsalRoom\": {\n    \"id\": 3,\n    \"name\": \"Tom's Garage\",\n    \"address\": \"Mechanic Street 11\",\n    \"capacity\": 6\n  }\n}"
+              "body": "{\n  \"id\": 10,\n  \"date\": \"2026-11-21\",\n  \"durationMinutes\": 90,\n  \"band\": {\n    \"id\": 1,\n    \"name\": \"Nocturnal Paroxysms\",\n    \"genre\": \"Ambient\",\n    \"foundedYear\": 2020\n  },\n  \"rehearsalRoom\": {\n    \"id\": 3,\n    \"name\": \"Tom's Garage\",\n    \"address\": \"Mechanic Street 11\",\n    \"capacity\": 6\n  }\n}"
             },
             {
               "name": "404 Not found",
@@ -2301,7 +2301,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"id\": 8,\n  \"date\": \"2026-11-21\",\n  \"durationMinutes\": 90,\n  \"band\": {\n    \"id\": 1\n  },\n  \"rehearsalRoom\": {\n    \"id\": 3\n  }\n}",
+                  "raw": "{\n  \"id\": 10,\n  \"date\": \"2026-11-21\",\n  \"durationMinutes\": 90,\n  \"band\": {\n    \"id\": 1\n  },\n  \"rehearsalRoom\": {\n    \"id\": 3\n  }\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2319,7 +2319,7 @@
                   "value": "application/problem+json"
                 }
               ],
-              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Rehearsal with id 8 not found\",\n  \"instance\": \"/rehearsal/update\"\n}"
+              "body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Rehearsal with id 10 not found\",\n  \"instance\": \"/rehearsal/update\"\n}"
             }
           ]
         },
@@ -2329,14 +2329,14 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/rehearsal/delete/8",
+              "raw": "{{baseUrl}}/rehearsal/delete/10",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "rehearsal",
                 "delete",
-                "8"
+                "10"
               ]
             },
             "description": "ADMIN only."
@@ -2348,14 +2348,14 @@
                 "method": "DELETE",
                 "header": [],
                 "url": {
-                  "raw": "{{baseUrl}}/rehearsal/delete/8",
+                  "raw": "{{baseUrl}}/rehearsal/delete/10",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "rehearsal",
                     "delete",
-                    "8"
+                    "10"
                   ]
                 },
                 "description": "ADMIN only."

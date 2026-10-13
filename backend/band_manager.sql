@@ -126,13 +126,17 @@ CREATE TABLE IF NOT EXISTS `rehearsals` (
   KEY `FKjwqpwfyafh8nr45ss3k96d26b` (`room_id`),
   CONSTRAINT `FKek3myin47a4h2wneken9frpo7` FOREIGN KEY (`band_id`) REFERENCES `bands` (`id`),
   CONSTRAINT `FKjwqpwfyafh8nr45ss3k96d26b` FOREIGN KEY (`room_id`) REFERENCES `rehearsal_rooms` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table band_manager.rehearsals: ~3 rows (approximately)
+-- Dumping data for table band_manager.rehearsals: ~7 rows (approximately)
 INSERT INTO `rehearsals` (`id`, `date`, `duration_minutes`, `band_id`, `room_id`) VALUES
 	(1, '2025-10-12', 90, 1, 3),
 	(3, '2023-11-30', 120, 4, 1),
-	(4, '2026-05-15', 150, 8, 2);
+	(4, '2026-05-15', 150, 8, 2),
+	(5, '2026-10-20', 90, 4, 2),
+	(6, '2026-11-02', 120, 1, 5),
+	(7, '2026-12-01', 120, 8, 5),
+	(8, '2027-01-15', 150, 4, 3);
 
 -- Dumping structure for table band_manager.users
 -- The demo accounts (admin / user) are created by the application on startup,
